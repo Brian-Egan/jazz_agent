@@ -4,7 +4,10 @@ Rebuilding the host from scratch, and what to do when something breaks. Written 
 whoever is doing this next, including a future version of whoever wrote it.
 
 For what the system is and why it's built this way, see [ARCHITECTURE.md](ARCHITECTURE.md)
-and [DECISIONS.md](DECISIONS.md). This document is operational, not architectural.
+and [DECISIONS.md](DECISIONS.md). This document is operational, not architectural. For
+registering the Spotify and Google OAuth credentials this system needs (sections 4 and 5
+below used to duplicate this and now just point here), see
+[SETUP.md](SETUP.md) -- written generically, for anyone running their own copy.
 
 ---
 
@@ -93,50 +96,19 @@ already live and port 443 is open in whatever firewall the VPS provider fronts.
 
 ## 4. Google OAuth client (for MCP auth)
 
-The MCP server uses FastMCP's `GoogleProvider` (`mcp/server.py`) to delegate login to
-Google; claude.ai and Claude Desktop require OAuth 2.1 with dynamic client registration and
-reject a static bearer token (ADR-012).
-
-1. In the [Google Cloud Console](https://console.cloud.google.com/), create a project (or
-   reuse one), then **APIs & Services -> Credentials -> Create Credentials -> OAuth client
-   ID**, application type **Web application**.
-2. Authorized redirect URI: `https://mcp.yourdomain.com/auth/callback` (GoogleProvider's
-   default `redirect_path`; confirm against the installed fastmcp version if this has
-   changed).
-3. Copy the client ID and secret into `.env`:
-   ```
-   GOOGLE_CLIENT_ID=...
-   GOOGLE_CLIENT_SECRET=...
-   MCP_PUBLIC_URL=https://mcp.yourdomain.com
-   MCP_ALLOWED_EMAILS=you@example.com
-   ```
-   `MCP_ALLOWED_EMAILS` is enforced by this project's own code
-   (`mcp/server.py::allowed_emails_check`), not by Google -- Google only proves who signed
-   in, not whether they're allowed to use this server.
-4. Start the server (`uv run python -m jazz_agent.mcp.server`, or under a process
-   supervisor -- see section 7) and connect from claude.ai: **Settings -> Connectors -> Add
-   custom connector**, URL `https://mcp.yourdomain.com`. This triggers the OAuth flow; sign
-   in with the allow-listed Google account.
+See [SETUP.md section 2](SETUP.md#2-google-oauth-mcp-server-authentication) for the full
+walkthrough (creating the OAuth client, redirect URI, consent screen, `.env` values). The
+one VPS-specific detail: use this deployment's real `https://mcp.yourdomain.com` as the
+public URL from SETUP.md step 2.1, from a live DNS record, not a testing tunnel.
 
 ---
 
 ## 5. Spotify token bootstrap
 
-The pipeline and MCP server both need a Spotify refresh token, obtained once, interactively,
-from a machine with a browser (not necessarily the VPS -- the redirect URI defaults to
-`http://127.0.0.1:8888/callback`, i.e. your laptop).
-
-1. In the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard), create an
-   app. Add `http://127.0.0.1:8888/callback` as a redirect URI.
-2. Fill in `.env`: `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`.
-3. Run the one-off auth script (`scripts/spotify_auth.py`), which opens a browser, catches
-   the redirect, exchanges the code, and prints a refresh token:
-   ```bash
-   uv run python scripts/spotify_auth.py
-   ```
-4. Paste the printed value into `.env` as `SPOTIFY_REFRESH_TOKEN` on the VPS. It is reused
-   forever unless Spotify revokes it (e.g. the app's grant is manually removed from the
-   account's connected-apps list).
+See [SETUP.md section 1](SETUP.md#1-spotify) for the full walkthrough (creating the app,
+running `scripts/spotify_auth.py`, obtaining the refresh token). Run it from a machine with
+a browser -- not necessarily the VPS itself -- then copy the resulting
+`SPOTIFY_REFRESH_TOKEN` into the VPS's `.env`.
 
 ---
 
