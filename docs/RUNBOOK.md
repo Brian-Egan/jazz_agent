@@ -5,67 +5,33 @@ whoever is doing this next, including a future version of whoever wrote it.
 
 For what the system is and why it's built this way, see [ARCHITECTURE.md](ARCHITECTURE.md)
 and [DECISIONS.md](DECISIONS.md). This document is operational, not architectural. For
-registering the Spotify and Google OAuth credentials this system needs (sections 4 and 5
-below used to duplicate this and now just point here), see
-[SETUP.md](SETUP.md) -- written generically, for anyone running their own copy.
+provisioning the VPS itself (sections 1-3 below used to duplicate this and now just point
+here), see [SERVER_SETUP.md](SERVER_SETUP.md). For registering the Spotify and Google OAuth
+credentials this system needs (sections 4 and 5 below), see [SETUP.md](SETUP.md) -- both
+written generically, for anyone running their own copy.
 
 ---
 
 ## 1. VPS provisioning
 
-**Target:** one small always-on Linux VPS (ADR-001). Nothing here is resource-hungry --
-roughly 5 shows/day across 6 clubs, a handful of API calls, one long-running MCP process.
-A 1-2 vCPU / 2GB RAM box is comfortable headroom.
-
-1. Provision a VPS running a current Ubuntu LTS. Point a DNS `A` record at it for the
-   subdomain the MCP server will live on (e.g. `mcp.yourdomain.com`) -- Caddy needs this to
-   issue a TLS certificate.
-2. SSH in, apply OS updates, create a non-root deploy user with `sudo` and add it to the
-   `docker` group once Docker is installed (step 3).
-3. Install Docker Engine + Docker Compose plugin (the official convenience script or your
-   distro's packages both work):
-   ```bash
-   curl -fsSL https://get.docker.com | sh
-   sudo usermod -aG docker "$USER"
-   # log out and back in for the group change to take effect
-   ```
-4. Install `git`, and `uv` (https://docs.astral.sh/uv/getting-started/installation/) for
-   running the batch pipeline and one-off scripts outside Docker (the pipeline and MCP
-   server run as host processes against a Dockerized Postgres -- see section 2).
-5. Clone the repository:
-   ```bash
-   git clone <this repo's URL> /opt/jazz_agent
-   cd /opt/jazz_agent
-   uv sync --all-groups
-   ```
-6. Copy `.env.example` to `.env` (mode `600`, never committed) and fill it in. Sections 4-6
-   below walk through the pieces that need real values: Google OAuth, Spotify, MusicBrainz,
-   ntfy.
+See [SERVER_SETUP.md](SERVER_SETUP.md) for the full walkthrough: first login, locking down
+SSH, firewall, DNS, and installing Docker/git/uv. **Target:** one small always-on Linux VPS
+(ADR-001) -- roughly 5 shows/day across 6 clubs, a handful of API calls, one long-running
+MCP process. A 1-2 vCPU / 2GB RAM box is comfortable headroom.
 
 ---
 
 ## 2. Docker Compose: Postgres
 
-Postgres runs in Docker (`docker-compose.yml`); the pipeline and MCP server run as host
-processes via `uv run`, connecting to Postgres on `localhost:5432`. This split exists
-because the pipeline needs `cron`, and the MCP server needs to sit behind Caddy on the host
-network -- containerizing either buys nothing here.
-
-```bash
-make up        # docker compose up -d db
-make migrate   # applies migrations/*.sql in order, including migrations/seed_clubs.sql
-```
-
-Verify:
-
-```bash
-docker compose ps                    # db should show "healthy"
-psql "$DATABASE_URL" -c '\dt'        # 15 tables
-psql "$DATABASE_URL" -c 'SELECT club_id, schedule_url FROM clubs;'   # 6 seeded clubs
-```
+See [SERVER_SETUP.md section 9](SERVER_SETUP.md#9-bring-up-postgres-and-migrate) for
+bringing Postgres up and applying migrations for the first time (`make up`, `make migrate`,
+and what to verify). Postgres runs in Docker (`docker-compose.yml`); the pipeline and MCP
+server run as host processes via `uv run`, connecting to Postgres on `localhost:5432` --
+this split exists because the pipeline needs `cron`, and the MCP server needs to sit behind
+Caddy on the host network, so containerizing either buys nothing here.
 
 If a club's URL has gone stale by the time you're reading this (sites redesign, domains
-change), re-verify before trusting it -- see section 8's "a club starts failing" entry.
+change), re-verify before trusting it -- see section 9's "a club starts failing" entry.
 `migrations/seed_clubs.sql` documents which two candidate domains were tried and rejected
 during the original seeding, so the next person doesn't re-discover the same dead ends.
 
@@ -73,24 +39,9 @@ during the original seeding, so the next person doesn't re-discover the same dea
 
 ## 3. Caddy and TLS
 
-Caddy terminates TLS for the MCP server and reverse-proxies to the local process
-(`MCP_HOST`/`MCP_PORT` in `.env`, default `0.0.0.0:8080`). Install Caddy from the official
-repo (https://caddyserver.com/docs/install#debian-ubuntu-raspbian), then:
-
-```
-# /etc/caddy/Caddyfile
-mcp.yourdomain.com {
-    reverse_proxy localhost:8080
-}
-```
-
-```bash
-sudo systemctl reload caddy
-```
-
-Caddy requests and renews the Let's Encrypt certificate automatically on first request to
-that hostname -- nothing else to configure, provided the DNS `A` record from section 1 is
-already live and port 443 is open in whatever firewall the VPS provider fronts.
+See [SERVER_SETUP.md section 10](SERVER_SETUP.md#10-caddy-and-tls) for installing Caddy and
+issuing the first certificate. Caddy terminates TLS for the MCP server and reverse-proxies
+to the local process (`MCP_HOST`/`MCP_PORT` in `.env`, default `0.0.0.0:8080`).
 
 ---
 

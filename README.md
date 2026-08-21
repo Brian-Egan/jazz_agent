@@ -35,8 +35,9 @@ Three findings drove the design, and all three contradict the obvious approach:
 | [docs/DECISIONS.md](docs/DECISIONS.md) | ADRs. Why each choice was made, what was rejected, and the evidence. |
 | [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | Schema, indexes, and the queries that make the taste graph useful. |
 | [docs/claude-project-instructions.md](docs/claude-project-instructions.md) | Paste into a Claude Project. Runtime contract for the chatbot. |
-| [docs/SETUP.md](docs/SETUP.md) | Registering Spotify and Google OAuth credentials, and running the server. Start here. |
-| [docs/RUNBOOK.md](docs/RUNBOOK.md) | Full deployment, backups, and the failure playbook -- how to rebuild the host from scratch. |
+| [docs/SERVER_SETUP.md](docs/SERVER_SETUP.md) | Turning a freshly provisioned cloud VPS into a box that's ready to run this. Start here. |
+| [docs/SETUP.md](docs/SETUP.md) | Registering Spotify and Google OAuth credentials, and running the server. |
+| [docs/RUNBOOK.md](docs/RUNBOOK.md) | Full deployment reference, backups, and the failure playbook -- how to rebuild the host from scratch. |
 | [AGENTS.md](AGENTS.md) | Conventions and invariants for the agent implementing this. |
 | [docs/original-prd.md](docs/original-prd.md) | The original PRD, verbatim. Superseded in places; see ADRs. |
 
