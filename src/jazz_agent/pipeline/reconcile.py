@@ -26,11 +26,15 @@ from jazz_agent.ports.repository import PlaylistRepo
 class WeekBooking:
     """One night's act, resolved or not. spotify_artist_id is None for a
     match_miss -- it still belongs in the description (so the week is
-    legible even where matching failed) but contributes no tracks."""
+    legible even where matching failed) but contributes no tracks. show_id
+    carries through onto PlaylistTrack.show_id -- provenance for feedback
+    attribution and for match_misses recorded during later correction
+    (pipeline/verify.py)."""
 
     show_date: date
     artist_name: str
     spotify_artist_id: str | None = None
+    show_id: int | None = None
 
 
 def reconcile_week(
@@ -85,6 +89,7 @@ def reconcile_week(
                     spotify_artist_id=track_meta[track_id]["artist_id"],
                     track_name=track_meta[track_id]["name"],
                     position=position_by_id[track_id],
+                    show_id=track_meta[track_id]["show_id"],
                 )
                 for track_id in new_track_ids
             ],
@@ -125,6 +130,7 @@ def _build_desired_tracks(
                 "album_id": selection.album["id"],
                 "artist_id": booking.spotify_artist_id,
                 "name": track.get("name"),
+                "show_id": booking.show_id,
             }
     return track_ids, track_meta
 
