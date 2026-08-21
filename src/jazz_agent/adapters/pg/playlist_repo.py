@@ -105,6 +105,18 @@ class PgPlaylistRepo:
             row = cur.fetchone()
             return _row_to_playlist(row) if row else None
 
+    def playlists_for_club(self, club_id: str) -> list[WeekPlaylist]:
+        with self._pool.connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                f"""
+                SELECT {_PLAYLIST_COLUMNS} FROM week_playlists
+                WHERE club_id = %s
+                ORDER BY week_start_date
+                """,
+                (club_id,),
+            )
+            return [_row_to_playlist(row) for row in cur.fetchall()]
+
     def add_tracks(self, week_playlist_id: int, tracks: Sequence[PlaylistTrack]) -> None:
         with self._pool.connection() as conn, conn.cursor() as cur:
             for track in tracks:

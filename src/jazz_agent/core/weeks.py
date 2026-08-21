@@ -28,3 +28,18 @@ def week_horizon(
     start = week_start_date(today, week_start_dow)
     for i in range(weeks_ahead + 1):
         yield start + timedelta(weeks=i)
+
+
+def retention_window(
+    today: date,
+    retain_weeks_past: int,
+    horizon_weeks_ahead: int,
+    week_start_dow: int = DEFAULT_WEEK_START_DOW,
+) -> tuple[date, date]:
+    """Return (keep_from, keep_to): the inclusive range of week_start_dates that
+    should stay followed (ARCHITECTURE.md section 9, ADR-009)."""
+    current = week_start_date(today, week_start_dow)
+    return (
+        current - timedelta(weeks=retain_weeks_past),
+        current + timedelta(weeks=horizon_weeks_ahead),
+    )

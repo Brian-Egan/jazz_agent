@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 
-from jazz_agent.core.weeks import week_horizon, week_range, week_start_date
+from jazz_agent.core.weeks import retention_window, week_horizon, week_range, week_start_date
 
 
 def test_week_start_date_properties_hold_across_boundaries() -> None:
@@ -64,3 +64,15 @@ def test_week_horizon_yields_weeks_ahead_inclusive() -> None:
     assert horizon[0] == this_week_start
     assert horizon[-1] == this_week_start + timedelta(weeks=4)
     assert horizon == sorted(horizon)
+
+
+def test_retention_window_default_six_live_playlists() -> None:
+    today = date(2026, 8, 18)  # a Tuesday
+    current_week = week_start_date(today)
+
+    keep_from, keep_to = retention_window(today, retain_weeks_past=1, horizon_weeks_ahead=4)
+
+    assert keep_from == current_week - timedelta(weeks=1)
+    assert keep_to == current_week + timedelta(weeks=4)
+    # six live playlists per club by default: -1, 0, +1, +2, +3, +4
+    assert (keep_to - keep_from).days // 7 + 1 == 6
