@@ -135,14 +135,14 @@ class SpotifyClient:
         response = self._request("GET", f"/albums/{spotify_album_id}/tracks", params={"limit": 50})
         return response.json()["items"]  # type: ignore[no-any-return]
 
-    def create_playlist(self, title: str, description: str) -> str:
+    def create_playlist(self, title: str, description: str) -> dict[str, Any]:
         user_id = self._current_user_id()
         response = self._request(
             "POST",
             f"/users/{user_id}/playlists",
             json={"name": title, "description": description, "public": False},
         )
-        return response.json()["id"]  # type: ignore[no-any-return]
+        return response.json()  # type: ignore[no-any-return]
 
     def get_playlist(self, spotify_playlist_id: str) -> dict[str, Any] | None:
         try:

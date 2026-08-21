@@ -30,7 +30,7 @@ class FakeMusicService:
     def get_album_tracks(self, spotify_album_id: str) -> list[dict[str, Any]]:
         raise NotImplementedError
 
-    def create_playlist(self, title: str, description: str) -> str:
+    def create_playlist(self, title: str, description: str) -> dict[str, Any]:
         raise NotImplementedError
 
     def get_playlist(self, spotify_playlist_id: str) -> dict[str, Any] | None:

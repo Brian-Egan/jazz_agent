@@ -21,8 +21,11 @@ class MusicService(Protocol):
     def get_artist_albums(self, spotify_artist_id: str) -> list[dict[str, Any]]: ...
     def get_album_tracks(self, spotify_album_id: str) -> list[dict[str, Any]]: ...
 
-    def create_playlist(self, title: str, description: str) -> str:
-        """Create a new playlist for the authenticated user. Returns its id."""
+    def create_playlist(self, title: str, description: str) -> dict[str, Any]:
+        """Create a new playlist for the authenticated user, returning the full
+        playlist object (id, external_urls, etc.) -- Spotify's create response
+        already includes it, so a caller needing the URL doesn't need a
+        separate get_playlist round-trip right after creating."""
         ...
 
     def get_playlist(self, spotify_playlist_id: str) -> dict[str, Any] | None: ...

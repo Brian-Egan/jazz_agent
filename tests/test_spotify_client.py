@@ -74,13 +74,20 @@ def test_create_playlist_looks_up_user_id_then_creates() -> None:
         return_value=httpx.Response(200, json={"id": "user1"})
     )
     route = respx.post("https://api.spotify.com/v1/users/user1/playlists").mock(
-        return_value=httpx.Response(201, json={"id": "playlist1"})
+        return_value=httpx.Response(
+            201,
+            json={
+                "id": "playlist1",
+                "external_urls": {"spotify": "https://open.spotify.com/playlist/playlist1"},
+            },
+        )
     )
     client = _client()
 
-    playlist_id = client.create_playlist("This Week", "desc")
+    playlist = client.create_playlist("This Week", "desc")
 
-    assert playlist_id == "playlist1"
+    assert playlist["id"] == "playlist1"
+    assert playlist["external_urls"]["spotify"] == "https://open.spotify.com/playlist/playlist1"
     assert route.calls.last.request.content
     body = json.loads(route.calls.last.request.content)
     assert body == {"name": "This Week", "description": "desc", "public": False}
