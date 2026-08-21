@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "NYC jazz club schedules -> weekly Spotify playlists, with a taste-graph MCP server."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "psycopg[binary,pool]>=3.2",
+]
 
 [dependency-groups]
 dev = [

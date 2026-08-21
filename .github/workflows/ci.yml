@@ -8,6 +8,25 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: jazz_agent
+          POSTGRES_PASSWORD: CHANGEME
+          POSTGRES_DB: jazz_agent
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U jazz_agent -d jazz_agent"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      TEST_DATABASE_URL: postgresql://jazz_agent:CHANGEME@localhost:5432/jazz_agent
+
     steps:
       - uses: actions/checkout@v4
 
@@ -16,6 +35,9 @@ jobs:
           python-version: "3.12"
 
       - uses: astral-sh/setup-uv@v3
+
+      - name: Install libpq client (psql)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client
 
       - name: Install dependencies
         run: uv sync --all-groups
