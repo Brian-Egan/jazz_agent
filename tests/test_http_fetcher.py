@@ -20,14 +20,18 @@ SAMPLE_HTML = """
 
 
 @respx.mock
-def test_get_returns_extracted_text() -> None:
+def test_get_returns_raw_html_not_extracted_text() -> None:
+    """get() must return raw markup: extraction (issue #5) needs JSON-LD <script>
+    blocks a prose extractor would discard."""
     respx.get(ROBOTS_URL).mock(return_value=httpx.Response(404))
     respx.get(URL).mock(return_value=httpx.Response(200, text=SAMPLE_HTML))
     fetcher = HttpFetcher()
 
-    text = fetcher.get(URL)
+    html = fetcher.get(URL)
 
-    assert "Bill Frisell Quartet" in text
+    assert "Bill Frisell Quartet" in html
+    assert "<article>" in html
+    assert "<h1>Tonight</h1>" in html
 
 
 @respx.mock

@@ -3,6 +3,12 @@ section 4, ADR-004).
 
 A realistic header set is not optional politeness: Birdland returns 403
 Forbidden to a bare request.
+
+get() returns raw HTML, matching the Fetcher port's `-> Html` signature
+(ARCHITECTURE.md section 2) -- not pre-converted text. Extraction (issue #5)
+needs the raw markup to opportunistically read JSON-LD schema.org/Event
+blocks before falling back to trafilatura + an LLM call, and JSON-LD lives
+in <script> tags that a prose extractor discards.
 """
 
 from __future__ import annotations
@@ -14,7 +20,6 @@ from collections.abc import Callable
 from urllib.parse import urlparse
 
 import httpx
-import trafilatura
 
 logger = logging.getLogger(__name__)
 
@@ -56,8 +61,7 @@ class HttpFetcher:
             logger.warning("robots.txt disallows fetching %s", url)
             raise RobotsDisallowed(f"robots.txt disallows fetching {url}")
 
-        html = self._get_with_backoff(url)
-        return trafilatura.extract(html) or ""
+        return self._get_with_backoff(url)
 
     def _allowed_by_robots(self, url: str) -> bool:
         host = urlparse(url).netloc

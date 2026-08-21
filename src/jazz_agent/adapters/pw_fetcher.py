@@ -3,6 +3,9 @@
 No club needs this today. Playwright is imported lazily inside get() rather
 than at module scope, so importing this module -- or this whole package --
 never pulls in the browser-automation stack for the common http-only path.
+
+Returns raw HTML, matching the Fetcher port's `-> Html` signature and
+http_fetcher.py's contract -- see http_fetcher.py's docstring for why.
 """
 
 from __future__ import annotations
@@ -15,7 +18,6 @@ class PlaywrightFetcher:
                 f"PlaywrightFetcher only handles render_mode='js', got {render_mode!r}"
             )
 
-        import trafilatura
         from playwright.sync_api import sync_playwright
 
         with sync_playwright() as pw:
@@ -23,8 +25,6 @@ class PlaywrightFetcher:
             try:
                 page = browser.new_page()
                 page.goto(url, wait_until="networkidle")
-                html = page.content()
+                return page.content()
             finally:
                 browser.close()
-
-        return trafilatura.extract(html) or ""
