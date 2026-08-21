@@ -1,0 +1,42 @@
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # FastMCP + OAuthProxy server (issue #14). Not runnable yet — this is a
+  # placeholder service definition so `docker-compose.yml` already has
+  # somewhere for it to land. It carries the "mcp" profile so a plain
+  # `docker compose up` does not try to build it before it exists.
+  mcp:
+    build:
+      context: .
+    env_file:
+      - .env
+    environment:
+      MCP_HOST: ${MCP_HOST:-0.0.0.0}
+      MCP_PORT: ${MCP_PORT:-8080}
+    ports:
+      - "${MCP_PORT:-8080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles:
+      - mcp
+
+volumes:
+  pgdata:
