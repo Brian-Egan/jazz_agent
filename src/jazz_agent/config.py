@@ -10,6 +10,17 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
+from dotenv import load_dotenv
+
+# Loads .env into the process environment on import, once. Searches the
+# current directory and its parents for .env, so this works whether you run
+# `uv run python scripts/spotify_auth.py` or `uv run python -m
+# jazz_agent.pipeline.daily` from the repo root. Never overrides a variable
+# that's already set in the real environment (override=False, the default)
+# -- a production deployment setting secrets via systemd Environment= or a
+# container's env, rather than a committed-nowhere .env file, still wins.
+load_dotenv()
+
 
 @dataclass(frozen=True)
 class Config:
