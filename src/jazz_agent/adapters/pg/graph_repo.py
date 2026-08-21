@@ -80,6 +80,18 @@ class PgGraphRepo:
             row = cur.fetchone()
             return _row_to_mb_artist(row) if row else None
 
+    def get_mb_artist_by_name(self, name: str) -> MbArtist | None:
+        with self._pool.connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                f"""
+                SELECT {_MB_ARTIST_COLUMNS} FROM mb_artists
+                WHERE lower(name) = lower(%s) LIMIT 1
+                """,
+                (name,),
+            )
+            row = cur.fetchone()
+            return _row_to_mb_artist(row) if row else None
+
     def record_edges(self, edges: Sequence[MbArtistEdge]) -> None:
         with self._pool.connection() as conn, conn.cursor() as cur:
             for edge in edges:
