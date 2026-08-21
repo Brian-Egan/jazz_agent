@@ -111,25 +111,18 @@ date.
 
 **Reads**
 
-- `search_shows(query, club?, date_from?, date_to?)` — find shows by artist or free text,
-  optionally scoped to a club or date range.
-- `whats_playing_at(club, date)` — the lineup for one club on one night.
-- `search_notes(query)` — full-text and fuzzy search over Brian's notes and the original
-  listings.
-- `recent_feedback(sentiment?, limit?)` — what he has liked or disliked lately.
-- `artist_profile(artist)` — genres, tags, instruments, groups, collaborators, and his
-  feedback history for one artist, in a single call.
-- `artist_connections(artist, depth?)` — traverses MusicBrainz relationships and
-  co-performance from club listings.
-- `get_run_health(days?)` — per-club pipeline outcomes; use when he asks whether something
-  is broken or why a club has gone quiet.
-- `get_listening_candidates()` — currently playing plus recent plays, joined to the log.
-  Always call this before recording feedback.
+- `artist_connections(artist_name, depth?)` -- Artists connected to this one via MusicBrainz or co-performance -- each result says which source it came from.
+- `artist_profile(artist_name)` -- Genres, MusicBrainz tags, instruments, groups, collaborators, and feedback history for one artist, in a single call.
+- `get_listening_candidates()` -- Currently-playing plus recently-played, joined to the log. Read-only; call record_feedback with a target from here to attach sentiment.
+- `get_run_health(days?)` -- Per-club pipeline run outcomes, most recent first.
+- `recent_feedback(sentiment?, limit?)` -- Recently recorded feedback, optionally filtered by sentiment.
+- `search_notes(query)` -- Free text over notes and listings (stemmed and typo-tolerant).
+- `search_shows(query?, club?, date_from?, date_to?)` -- Structured and fuzzy show lookup.
+- `whats_playing_at(club, on_date)` -- What played at a given club on a given date.
 
 **Writes**
 
-- `record_feedback(target_type, target_id, sentiment, note?)` — the only write operation
-  available. Requires a target Brian has explicitly confirmed.
+- `record_feedback(target_type, target_id, sentiment?, note?)` -- Attach sentiment and/or a note to an artist, track, or album -- never a weekly playlist (ADR-014). Rejects a target that doesn't resolve.
 
 <!-- END GENERATED TOOL INVENTORY -->
 

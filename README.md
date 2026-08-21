@@ -35,6 +35,7 @@ Three findings drove the design, and all three contradict the obvious approach:
 | [docs/DECISIONS.md](docs/DECISIONS.md) | ADRs. Why each choice was made, what was rejected, and the evidence. |
 | [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | Schema, indexes, and the queries that make the taste graph useful. |
 | [docs/claude-project-instructions.md](docs/claude-project-instructions.md) | Paste into a Claude Project. Runtime contract for the chatbot. |
+| [docs/RUNBOOK.md](docs/RUNBOOK.md) | Deployment, backups, and the failure playbook -- how to rebuild the host from scratch. |
 | [AGENTS.md](AGENTS.md) | Conventions and invariants for the agent implementing this. |
 | [docs/original-prd.md](docs/original-prd.md) | The original PRD, verbatim. Superseded in places; see ADRs. |
 
@@ -43,9 +44,12 @@ from it, the ADR says so explicitly and names the PRD section it supersedes.
 
 ## Status
 
-Not yet implemented. The build is tracked as issues under the `v1` milestone, each with
-acceptance criteria and explicit `Blocked by` links. Start with the lowest-numbered
-unblocked issue.
+All `v1` milestone issues are implemented and tested. Two things remain before this is
+actually running in production, both requiring a human: registering a real Google OAuth
+client and a real Spotify Developer app (see [docs/RUNBOOK.md](docs/RUNBOOK.md) sections 4-5),
+and deploying to a real VPS. The build was tracked as issues under the `v1` milestone, each
+with acceptance criteria and explicit `Blocked by` links -- see the closed issues for what
+was built and why.
 
 ## Stack
 
