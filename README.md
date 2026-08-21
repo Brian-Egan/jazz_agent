@@ -1,4 +1,4 @@
-# NYC Jazz Discovery
+# Jazz Agent
 
 A single-user tool that reads the schedules of NYC jazz clubs, works out who is playing,
 and builds a Spotify playlist per club per week so the music arrives without being
@@ -36,7 +36,7 @@ Three findings drove the design, and all three contradict the obvious approach:
 | [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | Schema, indexes, and the queries that make the taste graph useful. |
 | [docs/claude-project-instructions.md](docs/claude-project-instructions.md) | Paste into a Claude Project. Runtime contract for the chatbot. |
 | [AGENTS.md](AGENTS.md) | Conventions and invariants for the agent implementing this. |
-| [docs/nyc-jazz-discovery-prd.md](docs/nyc-jazz-discovery-prd.md) | The original PRD, verbatim. Superseded in places; see ADRs. |
+| [docs/original-prd.md](docs/original-prd.md) | The original PRD, verbatim. Superseded in places; see ADRs. |
 
 The PRD is kept unedited as the record of original intent. Where the architecture departs
 from it, the ADR says so explicitly and names the PRD section it supersedes.

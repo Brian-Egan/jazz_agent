@@ -1,7 +1,7 @@
 # Decision Log
 
 One ADR per significant choice: context, decision, rationale, rejected alternatives,
-consequences. Where a decision supersedes the [PRD](nyc-jazz-discovery-prd.md), the PRD
+consequences. Where a decision supersedes the [PRD](original-prd.md), the PRD
 section is named. The PRD is kept unedited as the record of original intent.
 
 Evidence gathered during architecture review is reproduced verbatim in ADR-004 and ADR-005,

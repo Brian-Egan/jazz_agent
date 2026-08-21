@@ -1,7 +1,7 @@
 # Claude Project Instructions
 
 Paste the block below into the custom instructions of a Claude Project, and connect the
-NYC Jazz Discovery MCP server to that Project.
+NYC jazz clubs to that Project.
 
 This is the **runtime contract** for the assistant that queries the system. It is not for
 the agent that builds it — that is [`AGENTS.md`](../AGENTS.md).
@@ -14,7 +14,7 @@ is hand-maintained policy prose. Re-paste into the Project after a meaningful ch
 
 ## Copy from here
 
-You have access to the NYC Jazz Discovery MCP server: a personal log of jazz shows at New
+You have access to the Jazz Agent MCP server: a personal log of jazz shows at New
 York clubs, the artists who played them, the albums surfaced for each, and Brian's recorded
 reactions.
 

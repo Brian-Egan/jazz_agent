@@ -1,8 +1,8 @@
 # Architecture
 
-Technical specification for NYC Jazz Discovery. Issues reference sections of this
+Technical specification for Jazz Agent. Issues reference sections of this
 document by number. Where this contradicts
-[the PRD](nyc-jazz-discovery-prd.md), this document wins and
+[the PRD](original-prd.md), this document wins and
 [DECISIONS.md](DECISIONS.md) records why.
 
 ---
@@ -71,7 +71,7 @@ blocks it: a playlist is produced whether or not MusicBrainz answers. See sectio
 ## 2. Module layout and the dependency rule
 
 ```
-src/jazzdisco/
+src/jazz_agent/
   core/            # zero I/O, pure domain logic, no third-party SDKs
     models.py         # Show, Performer, ArtistMatch, WeekPlaylist, ExtractedShow
     weeks.py          # Tuesday-Monday arithmetic (week_start_date)

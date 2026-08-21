@@ -1,4 +1,4 @@
--- 0001_init.sql — NYC Jazz Discovery initial schema
+-- 0001_init.sql — Jazz Agent initial schema
 --
 -- Postgres 17. See docs/DATA_MODEL.md for rationale and example queries.
 --

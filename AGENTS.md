@@ -16,7 +16,7 @@ conflate them.
 2. [`docs/DECISIONS.md`](docs/DECISIONS.md) — why things are the way they are.
 3. [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) — schema and the queries it exists to serve.
 
-[`docs/nyc-jazz-discovery-prd.md`](docs/nyc-jazz-discovery-prd.md) is the original PRD, kept
+[`docs/original-prd.md`](docs/original-prd.md) is the original PRD, kept
 verbatim. **It is superseded in several places.** Where the PRD and ARCHITECTURE.md disagree,
 ARCHITECTURE.md wins and the relevant ADR names the superseded section. Do not implement
 from the PRD directly.
