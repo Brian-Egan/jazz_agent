@@ -121,20 +121,28 @@ Either way, call this value `<public-url>` below -- e.g. `https://mcp.example.co
 
 ### 2.2 Create the OAuth client
 
-1. In the [Google Cloud Console](https://console.cloud.google.com/), create a project (or
-   reuse one you control), then **APIs & Services -> Credentials -> Create Credentials ->
-   OAuth client ID**.
-2. Application type: **Web application**.
-3. **Authorized redirect URIs**: add `<public-url>/auth/callback` exactly --
-   `GoogleProvider`'s default `redirect_path` is `/auth/callback` (verified against the
-   installed fastmcp version; if you've pinned a materially different fastmcp release,
-   double check this hasn't changed). Any mismatch here is the single most common setup
-   failure -- Google will reject the callback with a redirect_uri_mismatch error.
-4. If prompted to configure the **OAuth consent screen** first, do so: external user type is
-   fine for personal use, and you don't need to submit it for verification -- add your own
-   Google account under **Test users** while the app is in "Testing" publishing status, which
-   keeps it private to accounts you explicitly list.
-5. Save, then copy the **Client ID** and **Client Secret**.
+In the [Google Cloud Console](https://console.cloud.google.com/), create a project (or reuse
+one you control). Google's console for this is the **Google Auth Platform** section (left
+nav: Overview / Branding / Audience / Clients / ...) -- it replaced the older single-page
+"OAuth consent screen + Credentials" flow, so don't be thrown if this doesn't match an older
+screenshot you find elsewhere.
+
+1. **Audience**: User type **External** (Internal only appears for Google Workspace
+   accounts). Leave publishing status as **Testing** -- you don't need to submit for
+   verification for a personal/single-user server. Add your own Google account under
+   **Test users**; this keeps sign-in private to accounts you explicitly list, and is what
+   actually has to happen before Google will let you create a client.
+2. **Branding**: fill in an app name (anything -- never shown to anyone else), a user support
+   email, and a developer contact email. Both can be your own address.
+3. **Clients -> Create OAuth client** (also reachable from the Overview page's "Create OAuth
+   client" button):
+   - Application type: **Web application**.
+   - **Authorized redirect URIs**: add `<public-url>/auth/callback` exactly --
+     `GoogleProvider`'s default `redirect_path` is `/auth/callback` (verified against the
+     installed fastmcp version; if you've pinned a materially different fastmcp release,
+     double check this hasn't changed). Any mismatch here is the single most common setup
+     failure -- Google will reject the callback with a redirect_uri_mismatch error.
+4. Save, then copy the **Client ID** and **Client Secret**.
 
 ### 2.3 Fill in `.env`
 
