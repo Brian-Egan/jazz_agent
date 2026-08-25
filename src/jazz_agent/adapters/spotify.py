@@ -124,12 +124,27 @@ class SpotifyClient:
         # sideman credits (ADR-010) -- without it you get greatest-hits
         # packages and other people's records, the common case for working
         # jazz musicians rather than an edge case.
-        response = self._request(
-            "GET",
-            f"/artists/{spotify_artist_id}/albums",
-            params={"include_groups": "album", "limit": 50},
-        )
-        return response.json()["items"]  # type: ignore[no-any-return]
+        #
+        # limit=10 is this endpoint's actual ceiling for apps registered
+        # after the November 2024 changes (ADR-005) -- anything higher 400s
+        # with "Invalid limit" despite older docs citing 50. Page through
+        # offset so a prolific artist's later albums are still eligible for
+        # select_album's popularity comparison, not silently dropped.
+        albums: list[dict[str, Any]] = []
+        offset = 0
+        while True:
+            response = self._request(
+                "GET",
+                f"/artists/{spotify_artist_id}/albums",
+                params={"include_groups": "album", "limit": 10, "offset": offset},
+            )
+            payload = response.json()
+            items = payload["items"]
+            albums.extend(items)
+            if payload.get("next") is None:
+                break
+            offset += len(items)
+        return albums
 
     def get_album_tracks(self, spotify_album_id: str) -> list[dict[str, Any]]:
         response = self._request("GET", f"/albums/{spotify_album_id}/tracks", params={"limit": 50})

@@ -192,12 +192,25 @@ sudo apt update
 sudo apt install -y caddy
 ```
 
+Installing Caddy writes a default `/etc/caddy/Caddyfile` with a placeholder static site
+(`root * /usr/share/caddy`, `file_server`, a commented-out `php_fastcgi` example). None of
+that applies here -- replace the whole file, don't merge with it:
+
 ```
 # /etc/caddy/Caddyfile
+{
+    email you@example.com
+}
+
 mcp.yourdomain.com {
     reverse_proxy localhost:8080
 }
 ```
+
+The global `email` block is optional but worth keeping -- it's how Let's Encrypt reaches you
+if a certificate renewal ever fails. Everything else (HTTP -> HTTPS redirect, cert issuance
+and renewal, not buffering the MCP server's streamed responses) Caddy handles automatically
+once it sees a real hostname; there's nothing else in a default install worth carrying over.
 
 ```bash
 sudo systemctl reload caddy
