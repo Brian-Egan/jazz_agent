@@ -164,15 +164,23 @@ class SpotifyClient:
         return response.json()  # type: ignore[no-any-return]
 
     def add_tracks(self, spotify_playlist_id: str, spotify_track_ids: Sequence[str]) -> None:
+        # POST .../tracks 403s -- removed in Spotify's Feb 2026 API migration,
+        # enforced for Development Mode apps from 9 March 2026 (docs/research/
+        # spotify-playlist-write-403.md). .../items is the replacement; same
+        # scopes, same {"uris": [...]} request body.
         uris = [f"spotify:track:{track_id}" for track_id in spotify_track_ids]
         for batch in _chunk(uris, _MAX_TRACKS_PER_REQUEST):
-            self._request("POST", f"/playlists/{spotify_playlist_id}/tracks", json={"uris": batch})
+            self._request("POST", f"/playlists/{spotify_playlist_id}/items", json={"uris": batch})
 
     def remove_tracks(self, spotify_playlist_id: str, spotify_track_ids: Sequence[str]) -> None:
+        # Same .../tracks -> .../items migration as add_tracks, but the request
+        # body key renamed too: "tracks" -> "items" (the object shape inside,
+        # {"uri": ...}, is unchanged) -- verified directly against Spotify's
+        # current reference docs, not just inferred from the URL rename.
         uris = [{"uri": f"spotify:track:{track_id}"} for track_id in spotify_track_ids]
         for batch in _chunk(uris, _MAX_TRACKS_PER_REQUEST):
             self._request(
-                "DELETE", f"/playlists/{spotify_playlist_id}/tracks", json={"tracks": batch}
+                "DELETE", f"/playlists/{spotify_playlist_id}/items", json={"items": batch}
             )
 
     def unfollow_playlist(self, spotify_playlist_id: str) -> None:

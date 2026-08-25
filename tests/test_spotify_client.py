@@ -147,8 +147,11 @@ def test_get_playlist_missing_returns_none() -> None:
 
 @respx.mock
 def test_add_tracks_batches_over_100() -> None:
+    # POST .../tracks 403s -- removed in Spotify's Feb 2026 API migration
+    # (docs/research/spotify-playlist-write-403.md); .../items is the
+    # replacement, confirmed live against the real API and the real account.
     _mock_token()
-    route = respx.post("https://api.spotify.com/v1/playlists/p1/tracks").mock(
+    route = respx.post("https://api.spotify.com/v1/playlists/p1/items").mock(
         return_value=httpx.Response(201, json={"snapshot_id": "s1"})
     )
     client = _client()
@@ -161,8 +164,11 @@ def test_add_tracks_batches_over_100() -> None:
 
 @respx.mock
 def test_remove_tracks() -> None:
+    # Same .../tracks -> .../items migration as add_tracks, but the request
+    # body key also renamed: "tracks" -> "items" (confirmed against Spotify's
+    # current reference docs -- the object shape inside is unchanged).
     _mock_token()
-    route = respx.delete("https://api.spotify.com/v1/playlists/p1/tracks").mock(
+    route = respx.delete("https://api.spotify.com/v1/playlists/p1/items").mock(
         return_value=httpx.Response(200, json={"snapshot_id": "s1"})
     )
     client = _client()
@@ -170,7 +176,7 @@ def test_remove_tracks() -> None:
     client.remove_tracks("p1", ["t1", "t2"])
 
     body = json.loads(route.calls.last.request.content)
-    assert body == {"tracks": [{"uri": "spotify:track:t1"}, {"uri": "spotify:track:t2"}]}
+    assert body == {"items": [{"uri": "spotify:track:t1"}, {"uri": "spotify:track:t2"}]}
 
 
 @respx.mock
