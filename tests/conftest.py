@@ -6,15 +6,21 @@ import os
 import subprocess
 from collections.abc import Iterator
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 import psycopg
 import pytest
+from psycopg import sql
 from psycopg_pool import ConnectionPool
 
 from jazz_agent.adapters.pg.pool import make_pool
 
+# The database name here deliberately differs from DATABASE_URL's -- this
+# fixture runs DROP SCHEMA public CASCADE, and the previous default matched
+# DATABASE_URL's host/port/db-name exactly, one missing TEST_DATABASE_URL
+# away from wiping a real database. Caught before it ever ran that way.
 TEST_DATABASE_URL = os.environ.get(
-    "TEST_DATABASE_URL", "postgresql://jazz_agent:CHANGEME@localhost:5432/jazz_agent"
+    "TEST_DATABASE_URL", "postgresql://jazz_agent:CHANGEME@localhost:5432/jazz_agent_test"
 )
 MIGRATIONS_DIR = Path(__file__).resolve().parent.parent / "migrations"
 
@@ -49,9 +55,24 @@ def _apply_migrations(database_url: str) -> None:
         )
 
 
+def _ensure_database_exists(database_url: str) -> None:
+    """Create the target database if it doesn't exist yet, so `make test` keeps
+    working with zero manual setup -- connects to the standard `postgres`
+    maintenance database to issue the CREATE DATABASE, since you can't run
+    that against the database you're trying to create."""
+    parsed = urlsplit(database_url)
+    db_name = parsed.path.lstrip("/")
+    admin_url = urlunsplit(parsed._replace(path="/postgres"))
+    with psycopg.connect(admin_url, autocommit=True) as conn:
+        exists = conn.execute("SELECT 1 FROM pg_database WHERE datname = %s", (db_name,)).fetchone()
+        if not exists:
+            conn.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(db_name)))
+
+
 @pytest.fixture(scope="session")
 def pg_pool() -> Iterator[ConnectionPool]:
     """A pool against a freshly-migrated database, built once per test session."""
+    _ensure_database_exists(TEST_DATABASE_URL)
     with psycopg.connect(TEST_DATABASE_URL, autocommit=True) as conn:
         conn.execute("DROP SCHEMA public CASCADE")
         conn.execute("CREATE SCHEMA public")
