@@ -199,7 +199,14 @@ RUNBOOK.md section 7 for a systemd unit; a plain terminal is fine for local test
 ### 3.3 Connect from claude.ai
 
 1. claude.ai -> **Settings -> Connectors -> Add custom connector**.
-2. URL: `<public-url>` (the same one from step 2.1/2.3).
+2. URL: `<public-url>/mcp` -- fastmcp's HTTP transport (`mcp.run(transport="http", ...)`
+   in `mcp/server.py`) mounts the actual MCP protocol endpoint at `/mcp`, not at the
+   bare domain. OAuth-related routes (`/auth/callback`, `/.well-known/...`) *do* work
+   at the bare `<public-url>`, which is why using it without `/mcp` still lets sign-in
+   succeed -- claude.ai only reports the problem afterward, as "Your account was
+   authorized, but no MCP server was found at the provided URL." Confirm directly with
+   `curl -i <public-url>/mcp` (expect `401`, meaning the route exists and just wants a
+   token) versus `curl -i <public-url>` (expect `404`) if this happens again.
 3. This triggers the OAuth flow from section 2: sign in with the Google account you added to
    `MCP_ALLOWED_EMAILS`.
 4. Once connected, ask it something the log can answer -- e.g. "what's played at
