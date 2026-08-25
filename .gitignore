@@ -38,3 +38,6 @@ tests/fixtures/live_cache/
 .DS_Store
 .idea/
 .vscode/
+
+# Handoff Docs
+handoffs/
