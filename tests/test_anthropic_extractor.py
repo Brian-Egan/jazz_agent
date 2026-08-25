@@ -21,6 +21,7 @@ from jazz_agent.adapters.anthropic_extractor import AnthropicExtractor, Extracti
 from jazz_agent.core.models import Performer
 
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures" / "club_html"
+_TODAY = date(2026, 8, 18)
 
 
 @dataclass
@@ -86,7 +87,7 @@ def test_village_vanguard_personnel_and_instruments_are_populated() -> None:
         }
     )
 
-    shows = extractor.extract(html, window=4)
+    shows = extractor.extract(html, window=4, today=_TODAY)
 
     assert len(shows) == 1
     show = shows[0]
@@ -95,6 +96,20 @@ def test_village_vanguard_personnel_and_instruments_are_populated() -> None:
     assert all(p.instrument for p in show.performers)
     assert {p.name for p in show.performers} == {"Bill Frisell", "Greg Tardy", "Gerald Clayton"}
     assert client.messages.calls  # went through the LLM path, not JSON-LD
+
+
+def test_prompt_states_todays_date_so_year_ambiguous_dates_resolve_correctly() -> None:
+    # A listing that gives a date without a year (the common case) is
+    # otherwise a guess for the model -- confirmed live in production before
+    # this fix, where real Blue Note shows extracted with the right month/day
+    # but the wrong year. Today's date has to actually be in the prompt.
+    html = "<html><body><article><p>Some listing text.</p></article></body></html>"
+    extractor, client = _extractor({"shows": []})
+
+    extractor.extract(html, window=4, today=_TODAY)
+
+    sent = client.messages.calls[-1]["messages"][0]["content"]
+    assert _TODAY.isoformat() in sent
 
 
 @pytest.mark.parametrize(
@@ -124,7 +139,7 @@ def test_golden_fixtures_extract_semantically_sane_shows(
         }
     )
 
-    shows = extractor.extract(html, window=4)
+    shows = extractor.extract(html, window=4, today=_TODAY)
 
     assert len(shows) == 1
     assert shows[0].show_date == date.fromisoformat(show_date)
@@ -138,7 +153,7 @@ def test_no_shows_yields_empty_list_not_an_error() -> None:
     )
     extractor, _ = _extractor({"shows": []})
 
-    shows = extractor.extract(html, window=4)
+    shows = extractor.extract(html, window=4, today=_TODAY)
 
     assert shows == []
 
@@ -148,7 +163,7 @@ def test_malformed_tool_input_missing_shows_key_fails_the_club_not_the_run() -> 
     extractor, _ = _extractor({"unexpected_key": []})
 
     with pytest.raises(ExtractionFailed):
-        extractor.extract(html, window=4)
+        extractor.extract(html, window=4, today=_TODAY)
 
 
 def test_malformed_show_entry_fails_the_club_not_the_run() -> None:
@@ -158,7 +173,7 @@ def test_malformed_show_entry_fails_the_club_not_the_run() -> None:
     )
 
     with pytest.raises(ExtractionFailed):
-        extractor.extract(html, window=4)
+        extractor.extract(html, window=4, today=_TODAY)
 
 
 def test_api_error_fails_the_club_not_the_run() -> None:
@@ -169,7 +184,7 @@ def test_api_error_fails_the_club_not_the_run() -> None:
     extractor, _ = _extractor(error)
 
     with pytest.raises(ExtractionFailed):
-        extractor.extract(html, window=4)
+        extractor.extract(html, window=4, today=_TODAY)
 
 
 def test_json_ld_event_is_preferred_over_the_llm() -> None:
@@ -184,7 +199,7 @@ def test_json_ld_event_is_preferred_over_the_llm() -> None:
     """
     extractor, client = _extractor({"shows": []})  # would prove the JSON-LD path was skipped
 
-    shows = extractor.extract(html, window=4)
+    shows = extractor.extract(html, window=4, today=_TODAY)
 
     assert len(shows) == 1
     assert shows[0].act_name == "Ravi Coltrane Quartet"
@@ -216,7 +231,7 @@ def test_json_ld_present_but_no_event_type_falls_back_to_llm() -> None:
         }
     )
 
-    shows = extractor.extract(html, window=4)
+    shows = extractor.extract(html, window=4, today=_TODAY)
 
     assert len(shows) == 1
     assert client.messages.calls  # fell through to the LLM, as JSON-LD had no Event data

@@ -100,14 +100,14 @@ class AnthropicExtractor:
         self._client = client
         self._model = model
 
-    def extract(self, text: str, window: int) -> list[ExtractedShow]:
+    def extract(self, text: str, window: int, today: date) -> list[ExtractedShow]:
         json_ld_shows = _extract_from_json_ld(text)
         if json_ld_shows is not None:
             return json_ld_shows
 
-        return self._extract_with_llm(text, window)
+        return self._extract_with_llm(text, window, today)
 
-    def _extract_with_llm(self, html: str, window: int) -> list[ExtractedShow]:
+    def _extract_with_llm(self, html: str, window: int, today: date) -> list[ExtractedShow]:
         prose = trafilatura.extract(html) or ""
         if not prose.strip():
             return []
@@ -126,8 +126,10 @@ class AnthropicExtractor:
                     {
                         "role": "user",
                         "content": (
-                            f"Extract every show from today through {window} weeks ahead "
-                            f"from this club listing text:\n\n{prose}"
+                            f"Today's date is {today.isoformat()}. Extract every show from "
+                            f"today through {window} weeks ahead from this club listing "
+                            f"text. Where the text gives a date without a year, resolve it "
+                            f"against today's date rather than guessing:\n\n{prose}"
                         ),
                     }
                 ],
