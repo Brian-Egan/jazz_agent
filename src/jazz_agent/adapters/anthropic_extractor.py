@@ -100,17 +100,36 @@ class AnthropicExtractor:
         self._client = client
         self._model = model
 
-    def extract(self, text: str, window: int, today: date) -> list[ExtractedShow]:
-        json_ld_shows = _extract_from_json_ld(text)
-        if json_ld_shows is not None:
-            return json_ld_shows
+    def extract(
+        self, text: str, window: int, today: date, venue_label: str | None = None
+    ) -> list[ExtractedShow]:
+        # A venue_label means this page mixes multiple venues (clubs.venue_label,
+        # e.g. smallslive.com covers Smalls/Mezzrow/Jazz Cultural Theatre) --
+        # the JSON-LD path doesn't know how to filter by venue, so it would
+        # silently reintroduce cross-venue mixing if a page ever adds Event
+        # JSON-LD later. Force the LLM path, which does filter, whenever a
+        # venue_label is set.
+        if venue_label is None:
+            json_ld_shows = _extract_from_json_ld(text)
+            if json_ld_shows is not None:
+                return json_ld_shows
 
-        return self._extract_with_llm(text, window, today)
+        return self._extract_with_llm(text, window, today, venue_label)
 
-    def _extract_with_llm(self, html: str, window: int, today: date) -> list[ExtractedShow]:
+    def _extract_with_llm(
+        self, html: str, window: int, today: date, venue_label: str | None
+    ) -> list[ExtractedShow]:
         prose = trafilatura.extract(html) or ""
         if not prose.strip():
             return []
+
+        venue_instruction_text = ""
+        if venue_label is not None:
+            venue_instruction_text = (
+                f"This page lists shows for multiple venues. Only extract shows "
+                f"explicitly labeled for {venue_label!r} (e.g. text like 'Live at "
+                f"{venue_label}'). Ignore every show labeled for any other venue. "
+            )
 
         try:
             # Constructed as plain dicts matching the SDK's TypedDict shapes at
@@ -129,7 +148,8 @@ class AnthropicExtractor:
                             f"Today's date is {today.isoformat()}. Extract every show from "
                             f"today through {window} weeks ahead from this club listing "
                             f"text. Where the text gives a date without a year, resolve it "
-                            f"against today's date rather than guessing:\n\n{prose}"
+                            f"against today's date rather than guessing. "
+                            f"{venue_instruction_text}\n\n{prose}"
                         ),
                     }
                 ],

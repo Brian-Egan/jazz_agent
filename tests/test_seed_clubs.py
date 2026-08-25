@@ -52,9 +52,11 @@ def test_seed_clubs_produces_exactly_six_clubs(db: ConnectionPool) -> None:
     club_ids = {row[0] for row in rows}
     assert club_ids == EXPECTED_CLUB_IDS
     assert len(rows) == 6
-    for _club_id, schedule_url, render_mode in rows:
+    for club_id, schedule_url, render_mode in rows:
         assert schedule_url.startswith("https://")
-        assert render_mode == "http"
+        # birdland's calendar renders client-side ("Calendar Loading..." with
+        # JS off) -- it's the one club that genuinely needs Playwright.
+        assert render_mode == ("js" if club_id == "birdland" else "http")
 
 
 def test_seed_clubs_is_idempotent(db: ConnectionPool) -> None:

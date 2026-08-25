@@ -7,7 +7,9 @@ from psycopg_pool import ConnectionPool
 
 from jazz_agent.core.models import Club
 
-_COLUMNS = "club_id, name, schedule_url, render_mode, week_start_dow, timezone, active, notes"
+_COLUMNS = (
+    "club_id, name, schedule_url, render_mode, week_start_dow, timezone, active, notes, venue_label"
+)
 
 
 class PgClubRepo:

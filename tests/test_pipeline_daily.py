@@ -49,7 +49,9 @@ class FakeExtractor:
     def __init__(self, responses: dict[str, list[ExtractedShow] | Exception]) -> None:
         self._responses = responses
 
-    def extract(self, text: str, window: int, today: date) -> list[ExtractedShow]:
+    def extract(
+        self, text: str, window: int, today: date, venue_label: str | None = None
+    ) -> list[ExtractedShow]:
         response = self._responses.get(text, [])
         if isinstance(response, Exception):
             raise response
