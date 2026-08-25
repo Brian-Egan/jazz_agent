@@ -52,6 +52,36 @@ def test_get_artist_albums_requests_album_include_group_only() -> None:
 
     assert albums == [{"id": "alb1"}]
     assert route.calls.last.request.url.params["include_groups"] == "album"
+    assert route.calls.last.request.url.params["limit"] == "10"
+
+
+@respx.mock
+def test_get_artist_albums_pages_through_all_results() -> None:
+    # limit=10 is this endpoint's real ceiling for apps registered after
+    # Nov 2024 (ADR-005) -- confirmed by hand against the live API, since
+    # it 400s above 10 despite older docs citing 50. A prolific artist still
+    # needs every album-type release collected across pages, not just the
+    # first ten, since select_album compares popularity across the full set.
+    _mock_token()
+    route = respx.get("https://api.spotify.com/v1/artists/abc/albums").mock(
+        side_effect=[
+            httpx.Response(
+                200,
+                json={
+                    "items": [{"id": "alb1"}],
+                    "next": "https://api.spotify.com/v1/artists/abc/albums?offset=1&limit=10",
+                },
+            ),
+            httpx.Response(200, json={"items": [{"id": "alb2"}], "next": None}),
+        ]
+    )
+    client = _client()
+
+    albums = client.get_artist_albums("abc")
+
+    assert albums == [{"id": "alb1"}, {"id": "alb2"}]
+    assert route.calls[0].request.url.params["offset"] == "0"
+    assert route.calls[1].request.url.params["offset"] == "1"
 
 
 @respx.mock
