@@ -18,6 +18,7 @@ class Club:
     timezone: str = "America/New_York"
     active: bool = True
     notes: str | None = None
+    venue_label: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

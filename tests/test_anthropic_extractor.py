@@ -112,6 +112,52 @@ def test_prompt_states_todays_date_so_year_ambiguous_dates_resolve_correctly() -
     assert _TODAY.isoformat() in sent
 
 
+def test_venue_label_adds_a_filter_instruction_to_the_prompt() -> None:
+    # smallslive.com covers Smalls, Mezzrow, and Jazz Cultural Theatre on one
+    # combined page -- venue_label is how a club scoped to one of those (e.g.
+    # smalls-live, mezzrow) stops the extraction from picking up the other
+    # venues' shows too.
+    html = "<html><body><article><p>Some listing text.</p></article></body></html>"
+    extractor, client = _extractor({"shows": []})
+
+    extractor.extract(html, window=4, today=_TODAY, venue_label="Mezzrow")
+
+    sent = client.messages.calls[-1]["messages"][0]["content"]
+    assert "Mezzrow" in sent
+    assert "multiple venues" in sent
+
+
+def test_no_venue_label_adds_no_filter_instruction() -> None:
+    html = "<html><body><article><p>Some listing text.</p></article></body></html>"
+    extractor, client = _extractor({"shows": []})
+
+    extractor.extract(html, window=4, today=_TODAY)
+
+    sent = client.messages.calls[-1]["messages"][0]["content"]
+    assert "multiple venues" not in sent
+
+
+def test_venue_label_forces_the_llm_path_even_when_json_ld_is_present() -> None:
+    # JSON-LD extraction doesn't know how to filter by venue -- if a
+    # multi-venue page ever adds Event JSON-LD, using it directly would
+    # silently reintroduce cross-venue mixing. venue_label must force the LLM
+    # path, which does filter, regardless of what JSON-LD is on the page.
+    html = """
+    <html><head>
+    <script type="application/ld+json">
+    {"@context": "https://schema.org", "@type": "MusicEvent",
+     "name": "Some Other Venue's Show", "startDate": "2026-09-01",
+     "performer": [{"@type": "Person", "name": "Someone"}]}
+    </script>
+    </head><body><article><p>Live at Mezzrow: real show tonight.</p></article></body></html>
+    """
+    extractor, client = _extractor({"shows": []})
+
+    extractor.extract(html, window=4, today=_TODAY, venue_label="Mezzrow")
+
+    assert client.messages.calls  # went through the LLM path, not JSON-LD
+
+
 @pytest.mark.parametrize(
     ("fixture_name", "act_name", "show_date"),
     [

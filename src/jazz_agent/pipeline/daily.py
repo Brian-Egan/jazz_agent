@@ -279,7 +279,7 @@ def _run_club_pipeline(
         raise _FetchFailed(str(e)) from e
 
     try:
-        extracted_shows = deps.extractor.extract(html, horizon_weeks_ahead, today)
+        extracted_shows = deps.extractor.extract(html, horizon_weeks_ahead, today, club.venue_label)
     except ExtractionFailed as e:
         raise _ExtractFailed(str(e)) from e
     except Exception as e:
