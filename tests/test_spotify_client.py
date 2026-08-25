@@ -98,12 +98,12 @@ def test_get_album_tracks() -> None:
 
 
 @respx.mock
-def test_create_playlist_looks_up_user_id_then_creates() -> None:
+def test_create_playlist_posts_to_me_playlists() -> None:
+    # POST /users/{user_id}/playlists 403s for apps registered after Nov 2024
+    # (ADR-005) -- confirmed live against the real API. /me/playlists is the
+    # one that still works, and needs no separate GET /me lookup first.
     _mock_token()
-    respx.get("https://api.spotify.com/v1/me").mock(
-        return_value=httpx.Response(200, json={"id": "user1"})
-    )
-    route = respx.post("https://api.spotify.com/v1/users/user1/playlists").mock(
+    route = respx.post("https://api.spotify.com/v1/me/playlists").mock(
         return_value=httpx.Response(
             201,
             json={
@@ -121,23 +121,6 @@ def test_create_playlist_looks_up_user_id_then_creates() -> None:
     assert route.calls.last.request.content
     body = json.loads(route.calls.last.request.content)
     assert body == {"name": "This Week", "description": "desc", "public": False}
-
-
-@respx.mock
-def test_create_playlist_reuses_cached_user_id() -> None:
-    _mock_token()
-    me_route = respx.get("https://api.spotify.com/v1/me").mock(
-        return_value=httpx.Response(200, json={"id": "user1"})
-    )
-    respx.post("https://api.spotify.com/v1/users/user1/playlists").mock(
-        return_value=httpx.Response(201, json={"id": "playlist1"})
-    )
-    client = _client()
-
-    client.create_playlist("Week 1", "")
-    client.create_playlist("Week 2", "")
-
-    assert me_route.call_count == 1
 
 
 @respx.mock

@@ -49,7 +49,7 @@ class FakeExtractor:
     def __init__(self, responses: dict[str, list[ExtractedShow] | Exception]) -> None:
         self._responses = responses
 
-    def extract(self, text: str, window: int) -> list[ExtractedShow]:
+    def extract(self, text: str, window: int, today: date) -> list[ExtractedShow]:
         response = self._responses.get(text, [])
         if isinstance(response, Exception):
             raise response
@@ -316,10 +316,40 @@ def test_dry_run_issues_zero_spotify_writes(db: ConnectionPool) -> None:
     assert music.remove_tracks_calls == []
     assert music.unfollow_calls == []
 
-    # But the pipeline still ran and computed what it would have built:
-    # the DB-side playlist and tracks exist, just never pushed to Spotify.
+    # The pipeline still ran and computed what it would have built (album
+    # selection, track ordering all executed for real against FakeMusicService's
+    # reads), but nothing that claims a Spotify side effect happened may be
+    # persisted -- otherwise a later real run trusts week_playlists'
+    # spotify_playlist_id as "this already exists" and never actually creates
+    # it (confirmed live in production: exactly this corrupted a real run).
+    # upsert_week_playlist itself is real bookkeeping, not a Spotify claim, so
+    # the row exists -- just unlinked and empty.
     playlist = PgPlaylistRepo(db).get_week_playlist("village-vanguard", TODAY)
     assert playlist is not None
+    assert playlist.spotify_playlist_id is None
+    assert PgPlaylistRepo(db).tracks_for(playlist.id) == []  # type: ignore[arg-type]
+
+
+def test_a_real_run_after_a_dry_run_still_creates_the_playlist_for_real(db: ConnectionPool) -> None:
+    # The actual production incident this guards against: a dry run's fake
+    # spotify_playlist_id must never be mistaken by a later real run for "this
+    # playlist already exists" -- reconcile_week's only idempotency signal is
+    # week_playlists.spotify_playlist_id being non-null.
+    _insert_club(db, "village-vanguard", "Village Vanguard", VANGUARD_URL)
+    fetcher = FakeFetcher({VANGUARD_URL: "<html>ok</html>"})
+    music = FakeMusicService()
+    music.register_artist(FRISELL_ID, "Bill Frisell", "album1", [{"id": "t1", "track_number": 1}])
+    extractor = FakeExtractor({"<html>ok</html>": _frisell_shows()})
+    deps = _deps(db, fetcher, extractor, music, FakeGraphService(), FakeNotifier())
+
+    run_daily(deps, TODAY, horizon_weeks_ahead=4, retain_weeks_past=1, dry_run=True, now=NOW)
+    run_daily(deps, TODAY, horizon_weeks_ahead=4, retain_weeks_past=1, dry_run=False, now=NOW)
+
+    assert music.create_playlist_calls == 1
+    assert music.add_tracks_calls == [("spotify-playlist-1", ["t1"])]
+    playlist = PgPlaylistRepo(db).get_week_playlist("village-vanguard", TODAY)
+    assert playlist is not None
+    assert playlist.spotify_playlist_id == "spotify-playlist-1"
     assert len(PgPlaylistRepo(db).tracks_for(playlist.id)) == 1  # type: ignore[arg-type]
 
 

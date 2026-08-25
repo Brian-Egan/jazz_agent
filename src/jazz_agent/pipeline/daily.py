@@ -21,7 +21,14 @@ from typing import Any
 import anthropic
 
 from jazz_agent.adapters.anthropic_extractor import AnthropicExtractor, ExtractionFailed
-from jazz_agent.core.models import Club, RunLogEntry, Show
+from jazz_agent.core.models import (
+    Club,
+    PlaylistEvent,
+    PlaylistTrack,
+    RunLogEntry,
+    Show,
+    WeekPlaylist,
+)
 from jazz_agent.core.normalize import normalize_act_name
 from jazz_agent.core.weeks import week_start_date
 from jazz_agent.pipeline.adjudicate import adjudicate
@@ -116,6 +123,65 @@ class DryRunMusicService:
         return self._inner.recently_played(limit)
 
 
+class DryRunPlaylistRepo:
+    """Wraps a PlaylistRepo, no-opping every write that would claim a real
+    Spotify side effect happened, logging what would have happened instead.
+
+    Reads and upsert_week_playlist (our own bookkeeping row, no Spotify claim)
+    pass through untouched -- the rest (link_spotify_playlist, add_tracks,
+    remove_track, record_event, mark_removed) would otherwise persist state a
+    later real run trusts as "this already exists in Spotify"
+    ((club_id, week_start_date) is reconcile_week's whole idempotency key,
+    AGENTS.md invariant 4) -- confirmed live: a dry run's fake
+    spotify_playlist_id made a subsequent real run try to add tracks to a
+    playlist ID that was never actually created."""
+
+    def __init__(self, inner: PlaylistRepo) -> None:
+        self._inner = inner
+
+    def upsert_week_playlist(self, playlist: WeekPlaylist) -> int:
+        return self._inner.upsert_week_playlist(playlist)
+
+    def link_spotify_playlist(
+        self, week_playlist_id: int, spotify_playlist_id: str, spotify_url: str
+    ) -> None:
+        logger.info(
+            "DRY_RUN: would link week_playlist %d to spotify playlist %s",
+            week_playlist_id,
+            spotify_playlist_id,
+        )
+
+    def get_week_playlist(self, club_id: str, week_start_date: date) -> WeekPlaylist | None:
+        return self._inner.get_week_playlist(club_id, week_start_date)
+
+    def playlists_for_club(self, club_id: str) -> list[WeekPlaylist]:
+        return self._inner.playlists_for_club(club_id)
+
+    def add_tracks(self, week_playlist_id: int, tracks: Sequence[PlaylistTrack]) -> None:
+        logger.info(
+            "DRY_RUN: would add %d tracks to week_playlist %d", len(tracks), week_playlist_id
+        )
+
+    def remove_track(self, week_playlist_id: int, spotify_track_id: str) -> None:
+        logger.info(
+            "DRY_RUN: would remove track %s from week_playlist %d",
+            spotify_track_id,
+            week_playlist_id,
+        )
+
+    def tracks_for(self, week_playlist_id: int) -> list[PlaylistTrack]:
+        return self._inner.tracks_for(week_playlist_id)
+
+    def record_event(self, event: PlaylistEvent) -> None:
+        logger.info("DRY_RUN: would record playlist event %r", event)
+
+    def events_for(self, week_playlist_id: int) -> list[PlaylistEvent]:
+        return self._inner.events_for(week_playlist_id)
+
+    def mark_removed(self, week_playlist_id: int, removed_at: datetime) -> None:
+        logger.info("DRY_RUN: would mark week_playlist %d removed", week_playlist_id)
+
+
 def run_daily(
     deps: Dependencies,
     today: date,
@@ -128,10 +194,13 @@ def run_daily(
     """Run the full pipeline for every active club. Returns the run_id."""
     run_id = str(uuid.uuid4())
     music = DryRunMusicService(deps.music) if dry_run else deps.music
+    playlist_repo = DryRunPlaylistRepo(deps.playlist_repo) if dry_run else deps.playlist_repo
 
     for club in deps.club_repo.get_active_clubs():
         club_logger = logging.LoggerAdapter(logger, {"run_id": run_id, "club_id": club.club_id})
-        run_club(club, run_id, today, horizon_weeks_ahead, deps, music, now, club_logger)
+        run_club(
+            club, run_id, today, horizon_weeks_ahead, deps, music, playlist_repo, now, club_logger
+        )
         _maybe_alert_chronic_failure(
             club, deps.run_repo, deps.notifier, chronic_failure_threshold, club_logger
         )
@@ -142,7 +211,7 @@ def run_daily(
                 retain_weeks_past,
                 horizon_weeks_ahead,
                 music,
-                deps.playlist_repo,
+                playlist_repo,
                 now,
             )
         except Exception:
@@ -159,6 +228,7 @@ def run_club(
     horizon_weeks_ahead: int,
     deps: Dependencies,
     music: MusicService,
+    playlist_repo: PlaylistRepo,
     now: datetime,
     club_logger: logging.LoggerAdapter[logging.Logger],
 ) -> str:
@@ -170,7 +240,7 @@ def run_club(
 
     try:
         outcome, shows_found = _run_club_pipeline(
-            club, today, horizon_weeks_ahead, deps, music, now, club_logger
+            club, today, horizon_weeks_ahead, deps, music, playlist_repo, now, club_logger
         )
     except Exception as e:
         outcome = _outcome_for_exception(e)
@@ -198,6 +268,7 @@ def _run_club_pipeline(
     horizon_weeks_ahead: int,
     deps: Dependencies,
     music: MusicService,
+    playlist_repo: PlaylistRepo,
     now: datetime,
     club_logger: logging.LoggerAdapter[logging.Logger],
 ) -> tuple[str, int]:
@@ -208,7 +279,7 @@ def _run_club_pipeline(
         raise _FetchFailed(str(e)) from e
 
     try:
-        extracted_shows = deps.extractor.extract(html, horizon_weeks_ahead)
+        extracted_shows = deps.extractor.extract(html, horizon_weeks_ahead, today)
     except ExtractionFailed as e:
         raise _ExtractFailed(str(e)) from e
     except Exception as e:
@@ -271,7 +342,7 @@ def _run_club_pipeline(
 
     for week_start, bookings in bookings_by_week.items():
         playlist = reconcile_week(
-            club.club_id, club.name, week_start, bookings, music, deps.playlist_repo
+            club.club_id, club.name, week_start, bookings, music, playlist_repo
         )
         for booking in bookings:
             if booking.spotify_artist_id is None:
@@ -285,7 +356,7 @@ def _run_club_pipeline(
                 deps.graph,
                 music,
                 deps.artist_repo,
-                deps.playlist_repo,
+                playlist_repo,
                 deps.show_repo,
                 deps.llm_client,
                 deps.adjudication_model,

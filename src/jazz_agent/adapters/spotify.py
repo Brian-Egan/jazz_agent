@@ -49,7 +49,6 @@ class SpotifyClient:
         self._now = now
         self._access_token: str | None = None
         self._access_token_expires_at: float = 0.0
-        self._user_id: str | None = None
 
     # ---------- token management ----------
 
@@ -104,13 +103,6 @@ class SpotifyClient:
             response.raise_for_status()
             return response
 
-    def _current_user_id(self) -> str:
-        if self._user_id is None:
-            response = self._request("GET", "/me")
-            self._user_id = response.json()["id"]
-        assert self._user_id is not None
-        return self._user_id
-
     # ---------- MusicService ----------
 
     def search_artists(self, query: str, limit: int = 10) -> list[dict[str, Any]]:
@@ -151,10 +143,13 @@ class SpotifyClient:
         return response.json()["items"]  # type: ignore[no-any-return]
 
     def create_playlist(self, title: str, description: str) -> dict[str, Any]:
-        user_id = self._current_user_id()
+        # POST /users/{user_id}/playlists 403s for apps registered after the
+        # Nov 2024 changes (ADR-005) -- confirmed live against the real API.
+        # /me/playlists is the one that still works and needs no separate
+        # GET /me lookup first.
         response = self._request(
             "POST",
-            f"/users/{user_id}/playlists",
+            "/me/playlists",
             json={"name": title, "description": description, "public": False},
         )
         return response.json()  # type: ignore[no-any-return]
