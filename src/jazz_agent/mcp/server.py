@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import dataclasses
 from datetime import date
-from typing import Any
+from typing import Any, Literal
 
 from fastmcp import FastMCP
 from fastmcp.server.auth.providers.google import GoogleProvider
@@ -106,10 +106,16 @@ def build_server(config: Config, pool: ConnectionPool, music: MusicService) -> F
 
     @mcp.tool(auth=check)
     def record_feedback(
-        target_type: str, target_id: str, sentiment: str | None = None, note: str | None = None
+        target_type: Literal["artist", "track", "album"],
+        target_id: str,
+        sentiment: Literal["liked", "disliked", "neutral"] | None = None,
+        note: str | None = None,
     ) -> dict[str, Any]:
         """Attach sentiment and/or a note to an artist, track, or album --
-        never a weekly playlist (ADR-014). Rejects a target that doesn't resolve."""
+        never a weekly playlist (ADR-014). sentiment must be exactly 'liked',
+        'disliked', or 'neutral' -- no other values, synonyms, or intensity
+        variants (e.g. not 'dislike', 'negative', 'thumbs_down'). A note alone,
+        with no sentiment, is also valid. Rejects a target that doesn't resolve."""
         return tools_feedback.record_feedback(pool, target_type, target_id, sentiment, note)
 
     return mcp

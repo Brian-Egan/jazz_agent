@@ -101,7 +101,12 @@ class AnthropicExtractor:
         self._model = model
 
     def extract(
-        self, text: str, window: int, today: date, venue_label: str | None = None
+        self,
+        text: str,
+        window: int,
+        today: date,
+        venue_label: str | None = None,
+        render_mode: str = "http",
     ) -> list[ExtractedShow]:
         # A venue_label means this page mixes multiple venues (clubs.venue_label,
         # e.g. smallslive.com covers Smalls/Mezzrow/Jazz Cultural Theatre) --
@@ -114,12 +119,28 @@ class AnthropicExtractor:
             if json_ld_shows is not None:
                 return json_ld_shows
 
-        return self._extract_with_llm(text, window, today, venue_label)
+        return self._extract_with_llm(text, window, today, venue_label, render_mode)
 
     def _extract_with_llm(
-        self, html: str, window: int, today: date, venue_label: str | None
+        self, html: str, window: int, today: date, venue_label: str | None, render_mode: str
     ) -> list[ExtractedShow]:
-        prose = trafilatura.extract(html) or ""
+        # trafilatura.extract()'s "main content" heuristic assumes a single
+        # article-like page and confidently picks the wrong section on a
+        # widget-heavy one -- confirmed live on two different failure shapes:
+        # smallslive.com's combined calendar (returns the site's
+        # mission-statement boilerplate instead of the listings) and
+        # birdlandjazz.com's JS calendar widget (returns a cookie-consent
+        # banner instead). Both return real, non-empty text, so the
+        # empty-prose check below never catches either case. baseline() is
+        # trafilatura's own simpler, less opinionated fallback extractor;
+        # confirmed live that it keeps the actual listings on both pages.
+        # venue_label (combined multi-venue page) and render_mode == 'js'
+        # (needed JS rendering in the first place, itself evidence of a
+        # widget-heavy page) are the two known triggers for this failure.
+        if venue_label is not None or render_mode == "js":
+            prose = trafilatura.baseline(html)[1] or ""
+        else:
+            prose = trafilatura.extract(html) or ""
         if not prose.strip():
             return []
 

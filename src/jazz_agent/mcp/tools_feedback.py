@@ -17,6 +17,7 @@ from jazz_agent.core.models import Feedback
 from jazz_agent.ports.music import MusicService
 
 _VALID_TARGET_TYPES = {"artist", "track", "album"}
+_VALID_SENTIMENTS = {"liked", "disliked", "neutral"}
 
 # target_type -> (table, column) to check existence against. Fixed internal
 # map, not user input, so building SQL from it below is not an injection risk.
@@ -87,6 +88,8 @@ def record_feedback(
         raise ValueError(
             f"target_type must be one of {sorted(_VALID_TARGET_TYPES)}, got {target_type!r}"
         )
+    if sentiment is not None and sentiment not in _VALID_SENTIMENTS:
+        raise ValueError(f"sentiment must be one of {sorted(_VALID_SENTIMENTS)}, got {sentiment!r}")
     if sentiment is None and note is None:
         raise ValueError("feedback needs a sentiment, a note, or both")
     if not _target_resolves(pool, target_type, target_id):

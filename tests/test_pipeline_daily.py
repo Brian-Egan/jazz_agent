@@ -50,7 +50,12 @@ class FakeExtractor:
         self._responses = responses
 
     def extract(
-        self, text: str, window: int, today: date, venue_label: str | None = None
+        self,
+        text: str,
+        window: int,
+        today: date,
+        venue_label: str | None = None,
+        render_mode: str = "http",
     ) -> list[ExtractedShow]:
         response = self._responses.get(text, [])
         if isinstance(response, Exception):
