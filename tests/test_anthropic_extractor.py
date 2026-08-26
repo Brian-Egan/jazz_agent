@@ -158,6 +158,50 @@ def test_venue_label_forces_the_llm_path_even_when_json_ld_is_present() -> None:
     assert client.messages.calls  # went through the LLM path, not JSON-LD
 
 
+def test_render_mode_js_uses_baseline_extraction(monkeypatch: pytest.MonkeyPatch) -> None:
+    # render_mode='js' means the page needed Playwright to render -- itself
+    # evidence of a widget-heavy page. Confirmed live on birdlandjazz.com's
+    # calendar widget: trafilatura.extract()'s main-content heuristic picked
+    # a cookie-consent banner over the real listings, returning real
+    # (wrong) text, so the empty-prose check never caught it. baseline() is
+    # the one confirmed live to keep the actual listings.
+    import jazz_agent.adapters.anthropic_extractor as extractor_module
+
+    traf = extractor_module.trafilatura
+    monkeypatch.setattr(traf, "extract", lambda html: "wrong: cookie banner")
+    monkeypatch.setattr(traf, "baseline", lambda html: (None, "right: real show listing", 10))
+    html = "<html><body>irrelevant</body></html>"
+    extractor, client = _extractor({"shows": []})
+
+    extractor.extract(html, window=4, today=_TODAY, render_mode="js")
+
+    sent = client.messages.calls[-1]["messages"][0]["content"]
+    assert "right: real show listing" in sent
+    assert "wrong: cookie banner" not in sent
+
+
+def test_http_render_mode_with_no_venue_label_uses_normal_extraction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # The default path (single-venue, server-rendered) keeps using
+    # trafilatura.extract()'s cleaner boilerplate-stripped output -- baseline()
+    # is a strictly noisier fallback, only worth it for the widget-heavy
+    # pages where extract() is confirmed to pick the wrong content.
+    import jazz_agent.adapters.anthropic_extractor as extractor_module
+
+    traf = extractor_module.trafilatura
+    monkeypatch.setattr(traf, "extract", lambda html: "right: clean article")
+    monkeypatch.setattr(traf, "baseline", lambda html: (None, "wrong: noisier fallback", 10))
+    html = "<html><body>irrelevant</body></html>"
+    extractor, client = _extractor({"shows": []})
+
+    extractor.extract(html, window=4, today=_TODAY)
+
+    sent = client.messages.calls[-1]["messages"][0]["content"]
+    assert "right: clean article" in sent
+    assert "wrong: noisier fallback" not in sent
+
+
 @pytest.mark.parametrize(
     ("fixture_name", "act_name", "show_date"),
     [
