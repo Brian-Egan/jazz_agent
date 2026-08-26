@@ -76,6 +76,19 @@ def test_record_feedback_rejects_an_invalid_target_type(db: ConnectionPool) -> N
         record_feedback(db, "playlist", "some-id", sentiment="liked")
 
 
+def test_record_feedback_rejects_an_invalid_sentiment(db: ConnectionPool) -> None:
+    # Live incident: a caller guessed "dislike", "negative", "down", and
+    # "thumbs_down" in turn, hitting the raw DB CHECK constraint's opaque
+    # error four times with no way to discover the actual valid values
+    # (liked/disliked/neutral) short of reading the schema directly. This
+    # must fail fast with the valid options listed, same as target_type does.
+    with pytest.raises(ValueError, match="sentiment must be one of") as exc_info:
+        record_feedback(db, "artist", "some-id", sentiment="dislike")
+    assert "disliked" in str(exc_info.value)
+    assert "liked" in str(exc_info.value)
+    assert "neutral" in str(exc_info.value)
+
+
 def test_record_feedback_rejects_empty_content(db: ConnectionPool) -> None:
     _seed_artist(db)
     with pytest.raises(ValueError, match="sentiment, a note, or both"):

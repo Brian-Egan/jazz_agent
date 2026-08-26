@@ -122,7 +122,7 @@ date.
 
 **Writes**
 
-- `record_feedback(target_type, target_id, sentiment?, note?)` -- Attach sentiment and/or a note to an artist, track, or album -- never a weekly playlist (ADR-014). Rejects a target that doesn't resolve.
+- `record_feedback(target_type, target_id, sentiment?, note?)` -- Attach sentiment and/or a note to an artist, track, or album -- never a weekly playlist (ADR-014). sentiment must be exactly 'liked', 'disliked', or 'neutral' -- no other values, synonyms, or intensity variants (e.g. not 'dislike', 'negative', 'thumbs_down'). A note alone, with no sentiment, is also valid. Rejects a target that doesn't resolve.
 
 <!-- END GENERATED TOOL INVENTORY -->
 
