@@ -18,6 +18,7 @@ def _insert_club(db: ConnectionPool, **overrides: object) -> None:
         "active": True,
         "notes": None,
         "venue_label": None,
+        "source": "scrape",
         **overrides,
     }
     with db.connection() as conn:
@@ -25,9 +26,10 @@ def _insert_club(db: ConnectionPool, **overrides: object) -> None:
             """
             INSERT INTO clubs
                 (club_id, name, schedule_url, render_mode, week_start_dow, timezone, active,
-                 notes, venue_label)
+                 notes, venue_label, source)
             VALUES (%(club_id)s, %(name)s, %(schedule_url)s, %(render_mode)s,
-                    %(week_start_dow)s, %(timezone)s, %(active)s, %(notes)s, %(venue_label)s)
+                    %(week_start_dow)s, %(timezone)s, %(active)s, %(notes)s, %(venue_label)s,
+                    %(source)s)
             """,
             fields,
         )
@@ -84,3 +86,28 @@ def test_get_active_clubs_excludes_inactive(db: ConnectionPool) -> None:
     active = repo.get_active_clubs()
 
     assert [c.club_id for c in active] == ["village-vanguard"]
+
+
+def test_get_active_clubs_excludes_capitalbop_rows(db: ConnectionPool) -> None:
+    # The NYC scrape loop must never see the feed row or mirrored venues (DC section 3).
+    _insert_club(db, club_id="village-vanguard", name="Village Vanguard")
+    _insert_club(
+        db,
+        club_id="capitalbop",
+        name="CapitalBop",
+        schedule_url="https://www.capitalbop.com/dcjazzcalendar/",
+        source="capitalbop_feed",
+    )
+    _insert_club(
+        db,
+        club_id="cb-blues-alley",
+        name="Blues Alley",
+        schedule_url=None,
+        source="capitalbop_venue",
+    )
+    repo = PgClubRepo(db)
+
+    assert [c.club_id for c in repo.get_active_clubs()] == ["village-vanguard"]
+    venue = repo.get_club("cb-blues-alley")
+    assert venue is not None
+    assert (venue.source, venue.schedule_url) == ("capitalbop_venue", None)

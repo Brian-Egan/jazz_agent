@@ -13,6 +13,7 @@ from typing import Protocol
 
 from jazz_agent.core.models import (
     Artist,
+    CapitalbopEvent,
     Club,
     Feedback,
     MatchMiss,
@@ -22,8 +23,12 @@ from jazz_agent.core.models import (
     Performer,
     PlaylistEvent,
     PlaylistTrack,
+    RollingPlaylist,
+    RollingPlaylistEvent,
+    RollingPlaylistTrack,
     RunLogEntry,
     Show,
+    VenueGroupMember,
     WeekPlaylist,
 )
 
@@ -99,3 +104,70 @@ class FeedbackRepo(Protocol):
 class RunRepo(Protocol):
     def log_run_outcome(self, entry: RunLogEntry) -> None: ...
     def recent_runs(self, club_id: str | None = None, days: int = 7) -> list[RunLogEntry]: ...
+
+
+class DedicatedGroupConflict(Exception):
+    """A venue already holds an active membership in a different dedicated group."""
+
+    def __init__(self, club_id: str, existing_group: str) -> None:
+        super().__init__(
+            f"{club_id} is already in dedicated group {existing_group!r}; "
+            "a venue may belong to at most one"
+        )
+        self.club_id = club_id
+        self.existing_group = existing_group
+
+
+class VenueGroupRepo(Protocol):
+    def add_member(self, club_id: str, group_key: str, filter_profile: str, added_via: str) -> int:
+        """Open a membership; returns its id. Raises ``ValueError`` for an unknown group,
+        profile, or a club that is not a capitalbop_venue row, and
+        ``DedicatedGroupConflict`` if the venue is active in another dedicated group.
+        Adding an already-active (club, group) pair returns the existing id unchanged."""
+        ...
+
+    def deactivate_member(self, club_id: str, group_key: str, at: datetime) -> bool:
+        """Stamp ``deactivated_at`` on the active row; True if one was open."""
+        ...
+
+    def active_members(self, group_key: str | None = None) -> list[VenueGroupMember]: ...
+
+
+class RollingPlaylistRepo(Protocol):
+    def upsert_rolling_playlist(self, playlist: RollingPlaylist) -> int:
+        """Insert, or update title/is_public/description, on a (region, slot_key) conflict.
+        spotify_playlist_id/url are untouched; see link_spotify_playlist."""
+        ...
+
+    def link_spotify_playlist(
+        self, rolling_playlist_id: int, spotify_playlist_id: str, spotify_url: str
+    ) -> None: ...
+    def get_rolling_playlist(self, region: str, slot_key: str) -> RollingPlaylist | None: ...
+    def open_stints(self, rolling_playlist_id: int) -> list[RollingPlaylistTrack]: ...
+    def open_stint(self, track: RollingPlaylistTrack) -> int:
+        """Open a stint. Raises if the track already has an open stint on this playlist."""
+        ...
+
+    def close_stint(self, stint_id: int, reason: str, at: datetime) -> None:
+        """Close with ``removed_at`` and ``removal_reason``. Never deletes (invariant 5)."""
+        ...
+
+    def user_removed_track_ids(self) -> set[str]:
+        """Tracks whose latest stint, on any playlist, closed with reason 'user'
+        (invariant 9: never re-added)."""
+        ...
+
+    def record_event(self, event: RollingPlaylistEvent) -> None: ...
+
+
+class CapitalbopRepo(Protocol):
+    def upsert_event(self, event: CapitalbopEvent) -> None:
+        """Insert, or refresh every field and last_seen_at, keyed on instance_id.
+        first_seen_at is preserved."""
+        ...
+
+    def get_event(self, instance_id: int) -> CapitalbopEvent | None: ...
+    def get_extraction(self, event_id: int, description_hash: str) -> dict[str, object] | None: ...
+    def put_extraction(
+        self, event_id: int, description_hash: str, result: dict[str, object], model: str
+    ) -> None: ...
