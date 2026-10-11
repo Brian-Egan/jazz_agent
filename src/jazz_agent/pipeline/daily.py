@@ -11,6 +11,7 @@ resolves the PRD's "failures visible" vs "no notifications" contradiction).
 from __future__ import annotations
 
 import contextlib
+import dataclasses
 import logging
 import time
 import uuid
@@ -24,6 +25,7 @@ import anthropic
 from jazz_agent.adapters.anthropic_extractor import AnthropicExtractor, ExtractionFailed
 from jazz_agent.core.models import (
     Club,
+    Feedback,
     PlaylistEvent,
     PlaylistTrack,
     RollingPlaylist,
@@ -34,6 +36,7 @@ from jazz_agent.core.models import (
     WeekPlaylist,
 )
 from jazz_agent.core.normalize import normalize_act_name
+from jazz_agent.core.novelty import FeedbackEntry
 from jazz_agent.core.weeks import week_start_date
 from jazz_agent.pipeline.adjudicate import adjudicate
 from jazz_agent.pipeline.dc import FEED_CLUB_ID, FEED_CLUB_NAME, DcDependencies, run_dc
@@ -49,6 +52,7 @@ from jazz_agent.ports.notifier import Notifier
 from jazz_agent.ports.repository import (
     ArtistRepo,
     ClubRepo,
+    FeedbackRepo,
     PlaylistRepo,
     RollingPlaylistRepo,
     RunLock,
@@ -219,6 +223,30 @@ class DryRunPlaylistRepo:
         logger.info("DRY_RUN: would mark week_playlist %d removed", week_playlist_id)
 
 
+class DryRunFeedbackRepo:
+    """DRY_RUN: removal-derived feedback is logged, not written. Reads pass through."""
+
+    def __init__(self, inner: FeedbackRepo) -> None:
+        self._inner = inner
+
+    def record_feedback(self, feedback: Feedback) -> int:
+        logger.info("DRY_RUN: would record feedback %r", feedback)
+        return -1
+
+    def feedback_for_target(self, target_type: str, target_id: str) -> list[Feedback]:
+        return self._inner.feedback_for_target(target_type, target_id)
+
+    def novelty_entries(self) -> list[FeedbackEntry]:
+        return self._inner.novelty_entries()
+
+
+class DryRunNotifier:
+    """DRY_RUN: DC's own alerts are logged, never pushed."""
+
+    def alert(self, msg: str) -> None:
+        logger.info("DRY_RUN: would send ntfy alert: %s", msg)
+
+
 class DryRunRollingRepo:
     """Wraps a RollingPlaylistRepo for DRY_RUN: every write that records playlist state is
     logged and skipped, so a dry run leaves no stint, event, link or playlist row behind (the
@@ -324,6 +352,9 @@ def _run_dc_unit(
     dc_logger = logging.LoggerAdapter(logger, {"run_id": run_id, "club_id": FEED_CLUB_ID})
     feed = Club(club_id=FEED_CLUB_ID, name=FEED_CLUB_NAME, schedule_url=None)
     rolling_repo = DryRunRollingRepo(dc.rolling_repo) if dry_run else dc.rolling_repo
+    if dry_run:
+        dc = dataclasses.replace(dc, feedback_repo=DryRunFeedbackRepo(dc.feedback_repo))
+    dc_notifier: Notifier = DryRunNotifier() if dry_run else deps.notifier
     start = time.monotonic()
     shows_found: int | None = None
     detail: str | None = None
@@ -346,6 +377,7 @@ def _run_dc_unit(
                 deps.adjudication_model,
                 music,
                 rolling_repo,
+                dc_notifier,
                 today,
                 now,
             )
