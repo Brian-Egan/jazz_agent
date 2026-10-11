@@ -243,8 +243,8 @@ class DryRunFeedbackRepo:
 class DryRunNotifier:
     """DRY_RUN: DC's own alerts are logged, never pushed."""
 
-    def alert(self, msg: str) -> None:
-        logger.info("DRY_RUN: would send ntfy alert: %s", msg)
+    def alert(self, msg: str, title: str | None = None, tags: Sequence[str] = ()) -> None:
+        logger.info("DRY_RUN: would send ntfy %r: %s", title or "alert", msg)
 
 
 class DryRunRollingRepo:
@@ -280,6 +280,13 @@ class DryRunRollingRepo:
 
     def open_stints(self, rolling_playlist_id: int) -> list[RollingPlaylistTrack]:
         return self._inner.open_stints(rolling_playlist_id) if rolling_playlist_id > 0 else []
+
+    def stinted_artist_ids(self, rolling_playlist_id: int) -> set[str]:
+        return (
+            self._inner.stinted_artist_ids(rolling_playlist_id)
+            if rolling_playlist_id > 0
+            else set()
+        )
 
     def open_stint(self, track: RollingPlaylistTrack) -> int:
         logger.info("DRY_RUN: would open stint for %s", track.spotify_track_id)
