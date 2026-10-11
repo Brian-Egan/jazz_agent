@@ -46,3 +46,14 @@ def test_score_is_bounded_between_zero_and_one() -> None:
 def test_missing_fields_do_not_raise() -> None:
     assert 0.0 <= plausibility_score({}) <= 1.0
     assert 0.0 <= plausibility_score({"genres": ["jazz"]}) <= 1.0
+
+
+def test_valdes_father_and_son_both_clear_the_floor() -> None:
+    """DC section 7's known hazard: Chucho and Chuchito Valdes are both working Cuban jazz
+    pianists with real catalogs. Plausibility must not tell them apart -- it cannot, and
+    must not drop either; telling them apart is adjudication's job."""
+    chucho = _candidate(["afro-cuban jazz", "latin jazz", "jazz"], followers=400_000, popularity=55)
+    chuchito = _candidate(["afro-cuban jazz", "latin jazz"], followers=9_000, popularity=28)
+
+    assert plausibility_score(chucho) > PLAUSIBILITY_FLOOR
+    assert plausibility_score(chuchito) > PLAUSIBILITY_FLOOR

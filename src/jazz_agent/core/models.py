@@ -34,6 +34,20 @@ class Performer:
 
 
 @dataclass(frozen=True, slots=True)
+class PersonnelExtraction:
+    """What Haiku reads out of one CapitalBop description (DC section 6).
+
+    ``leaders`` is more than one for a festival day or a double bill. ``is_tribute`` is
+    stored, not acted on: a leader is always the performing act, never the honoured artist.
+    """
+
+    leaders: tuple[str, ...] = ()
+    performers: tuple[Performer, ...] = ()
+    album_mentioned: str | None = None
+    is_tribute: bool = False
+
+
+@dataclass(frozen=True, slots=True)
 class ExtractedShow:
     """One event as extracted from a club's schedule page (ARCHITECTURE.md section 5)."""
 

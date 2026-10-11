@@ -325,3 +325,66 @@ def test_json_ld_present_but_no_event_type_falls_back_to_llm() -> None:
 
     assert len(shows) == 1
     assert client.messages.calls  # fell through to the LLM, as JSON-LD had no Event data
+
+
+# --- extract_personnel (DC section 6) ---------------------------------------------------------
+
+
+def test_extract_personnel_reads_leaders_performers_and_flags() -> None:
+    payload = {
+        "leaders": ["Raphael Rogiński", "Sarah Hughes"],
+        "performers": [
+            {"name": "Raphael Rogiński", "instrument": "guitar"},
+            {"name": "Sarah Hughes", "instrument": None},
+            {"name": "  ", "instrument": "drums"},
+        ],
+        "album_mentioned": None,
+        "is_tribute": False,
+    }
+    extractor = AnthropicExtractor(client=_FakePersonnelClient(payload), model="m")  # type: ignore[arg-type]
+
+    result = extractor.extract_personnel("Raphael Rogiński / Sarah Hughes", "A double bill.")
+
+    assert result.leaders == ("Raphael Rogiński", "Sarah Hughes")
+    assert [p.name for p in result.performers] == ["Raphael Rogiński", "Sarah Hughes"]
+    assert result.performers[0].instrument == "guitar"
+    assert result.is_tribute is False and result.album_mentioned is None
+
+
+def test_extract_personnel_sends_the_name_and_description_and_forces_the_tool() -> None:
+    client = _FakePersonnelClient(
+        {"leaders": ["X"], "performers": [], "album_mentioned": None, "is_tribute": True}
+    )
+    extractor = AnthropicExtractor(client=client, model="claude-haiku-4-5")  # type: ignore[arg-type]
+
+    result = extractor.extract_personnel("Radiohead Jazz Project", "Plays the music of Radiohead.")
+
+    call = client.messages.calls[0]
+    assert call["tool_choice"] == {"type": "tool", "name": "record_personnel"}
+    assert "Radiohead Jazz Project" in call["messages"][0]["content"]
+    assert "Plays the music of Radiohead." in call["messages"][0]["content"]
+    assert result.is_tribute is True
+
+
+def test_extract_personnel_raises_extraction_failed_on_malformed_output() -> None:
+    extractor = AnthropicExtractor(client=_FakePersonnelClient({"performers": []}), model="m")  # type: ignore[arg-type]
+
+    with pytest.raises(ExtractionFailed):
+        extractor.extract_personnel("Act", "text")
+
+
+class _FakePersonnelClient:
+    def __init__(self, payload: dict[str, Any]) -> None:
+        self.messages = _FakePersonnelMessages(payload)
+
+
+class _FakePersonnelMessages:
+    def __init__(self, payload: dict[str, Any]) -> None:
+        self._payload = payload
+        self.calls: list[dict[str, Any]] = []
+
+    def create(self, **kwargs: Any) -> _FakeMessage:
+        self.calls.append(kwargs)
+        return _FakeMessage(
+            content=[_FakeToolUseBlock(input=self._payload, name="record_personnel")]
+        )

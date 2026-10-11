@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Protocol
 
-from jazz_agent.core.models import ExtractedShow
+from jazz_agent.core.models import ExtractedShow, PersonnelExtraction
 
 
 class Extractor(Protocol):
@@ -28,4 +28,10 @@ class Extractor(Protocol):
         ``render_mode``, when ``'js'``, means the page needed Playwright to
         render -- itself evidence of a widget-heavy page where a naive
         main-content heuristic is likely to pick the wrong section."""
+        ...
+
+    def extract_personnel(self, act_name: str, description: str) -> PersonnelExtraction:
+        """Read who leads and who else is named from one CapitalBop event description
+        (DC section 6). ``description`` is plain text; the linked article is never passed
+        (ADR-017). Raises on an API failure or malformed output rather than guessing."""
         ...

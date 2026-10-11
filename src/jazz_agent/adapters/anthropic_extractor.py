@@ -25,7 +25,7 @@ from typing import Any
 import anthropic
 import trafilatura
 
-from jazz_agent.core.models import ExtractedShow, Performer
+from jazz_agent.core.models import ExtractedShow, Performer, PersonnelExtraction
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +88,45 @@ _TOOL_SCHEMA: dict[str, Any] = {
 }
 
 
+_PERSONNEL_SYSTEM_PROMPT = (
+    "You read one jazz event listing from a Washington, D.C. calendar and record who is "
+    "performing using the record_personnel tool. leaders: the act or acts that headline. A "
+    "festival day or a double bill ('A / B', 'A and B') has several leaders, one entry each; "
+    "a band led by a named musician has that musician (or the billed band name) as its one "
+    "leader. Never list a musician honoured by a tribute or repertory act ('the music of X', "
+    "'X Jazz Project') as a leader -- the performing act leads. performers: every musician "
+    "the description names, with their instrument where it is stated. album_mentioned: the "
+    "album if one is named, else null. is_tribute: true for a repertory or tribute act. Use "
+    "only what the text says; do not guess names or instruments."
+)
+
+_PERSONNEL_TOOL_NAME = "record_personnel"
+_PERSONNEL_TOOL_SCHEMA: dict[str, Any] = {
+    "name": _PERSONNEL_TOOL_NAME,
+    "description": "Record the leaders and named musicians of one event listing.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "leaders": {"type": "array", "items": {"type": "string"}},
+            "performers": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string"},
+                        "instrument": {"type": ["string", "null"]},
+                    },
+                    "required": ["name"],
+                },
+            },
+            "album_mentioned": {"type": ["string", "null"]},
+            "is_tribute": {"type": "boolean"},
+        },
+        "required": ["leaders", "performers", "album_mentioned", "is_tribute"],
+    },
+}
+
+
 class ExtractionFailed(Exception):
     """Malformed model output or an API failure.
 
@@ -120,6 +159,29 @@ class AnthropicExtractor:
                 return json_ld_shows
 
         return self._extract_with_llm(text, window, today, venue_label, render_mode)
+
+    def extract_personnel(self, act_name: str, description: str) -> PersonnelExtraction:
+        try:
+            response = self._client.messages.create(
+                model=self._model,
+                max_tokens=1024,
+                system=_PERSONNEL_SYSTEM_PROMPT,
+                tools=[_PERSONNEL_TOOL_SCHEMA],
+                tool_choice={"type": "tool", "name": _PERSONNEL_TOOL_NAME},
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"Act: {act_name}\n\nDescription:\n{description}",
+                    }
+                ],
+            )  # type: ignore[call-overload]
+        except anthropic.APIError as e:
+            raise ExtractionFailed(f"Anthropic API error: {e}") from e
+
+        for block in response.content:
+            if block.type == "tool_use" and block.name == _PERSONNEL_TOOL_NAME:
+                return _parse_personnel(block.input)
+        raise ExtractionFailed("Model response contained no record_personnel tool call")
 
     def _extract_with_llm(
         self, html: str, window: int, today: date, venue_label: str | None, render_mode: str
@@ -284,3 +346,21 @@ def _parse_show(raw: dict[str, Any]) -> ExtractedShow:
         album_mentioned=raw.get("album_mentioned"),
         raw_text=raw["raw_text"],
     )
+
+
+def _parse_personnel(payload: Any) -> PersonnelExtraction:
+    try:
+        leaders = tuple(str(n).strip() for n in payload["leaders"] if str(n).strip())
+        performers = tuple(
+            Performer(name=p["name"].strip(), instrument=p.get("instrument"))
+            for p in payload.get("performers", [])
+            if p["name"].strip()
+        )
+        return PersonnelExtraction(
+            leaders=leaders,
+            performers=performers,
+            album_mentioned=payload.get("album_mentioned"),
+            is_tribute=bool(payload.get("is_tribute", False)),
+        )
+    except (KeyError, TypeError, AttributeError) as e:
+        raise ExtractionFailed(f"Malformed personnel payload {payload!r}: {e}") from e

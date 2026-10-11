@@ -217,6 +217,37 @@ def plan_playlists(
     return planned
 
 
+def planned_instance_ids(
+    events: Iterable[DcEvent], memberships: Iterable[Membership], today: date
+) -> frozenset[int]:
+    """Every eligible show, by instance id, of every act that made a playlist.
+
+    This is what Haiku extracts for (DC section 5: eligibility is computed before
+    extraction, so ineligible and capped-out acts cost nothing). An act's every eligible
+    date is included so a residency's later instances get their performers too.
+    """
+    event_list = list(events)
+    member_list = list(memberships)
+    planned = plan_playlists(event_list, member_list, today)
+    wanted = {
+        (p.group_key, act.act_name_norm.casefold())
+        for p in dc_groups.PLAYLISTS
+        for act in planned[p.slot_key]
+    }
+    start, end = dc_window(today)
+    by_club: dict[str, list[Membership]] = defaultdict(list)
+    for m in member_list:
+        by_club[m.club_id].append(m)
+    window_events = [e for e in event_list if start <= e.show_date <= end]
+    counts = act_date_counts(window_events, today)
+    return frozenset(
+        e.instance_id
+        for e in window_events
+        for group_key in eligible_groups(e, by_club, counts)
+        if (group_key, _act_key(e)) in wanted
+    )
+
+
 def _earliest(act_events: Sequence[DcEvent]) -> DcEvent:
     return min(act_events, key=lambda e: (e.show_date, e.instance_id))
 
