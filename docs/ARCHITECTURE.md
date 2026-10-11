@@ -5,6 +5,11 @@ document by number. Where this contradicts
 [the PRD](original-prd.md), this document wins and
 [DECISIONS.md](DECISIONS.md) records why.
 
+This document specifies the NYC system and everything shared. The Washington, D.C.
+extension — CapitalBop feed, rolling playlists, venue groups — is specified in
+[DC.md](DC.md), referenced as **DC §n**, which defers back here for matching and failure
+isolation.
+
 ---
 
 ## 1. Shape of the system
@@ -13,7 +18,8 @@ Two processes, one database, no shared code path beyond the repository layer.
 
 - **Batch pipeline** — invoked by cron once a day. Stateless and re-runnable: running it
   twice must converge on the same state, not accumulate.
-- **MCP server** — long-running. Reads the log; the only thing it ever writes is feedback.
+- **MCP server** — long-running. Reads the log; the only things it ever writes are feedback
+  and DC venue group membership (section 11).
 
 ```mermaid
 flowchart TB
@@ -290,6 +296,11 @@ tracks across them is the worse listen, and for jazz it obscures the record enti
    musicians frequently have no album with meaningful popularity.
 5. `album_tracks`, ordered by `track_number`.
 
+> **Known issue.** Spotify removed `popularity` from every object in its February 2026
+> migration, so step 3 has nothing to sort on and every artist falls through to step 4: NYC
+> currently gets each artist's most recent album. Unresolved; see
+> [ADR-010](DECISIONS.md#adr-010). DC uses a different rule (DC §8).
+
 ---
 
 ## 8. Week reconciler
@@ -327,6 +338,9 @@ Two things to be precise about:
 - **The log is never pruned.** Removing a playlist from Spotify must never affect its row.
   Spotify holds the audio; the database holds the history.
 
+Retention applies to `week_playlists` only. DC's rolling playlists are permanent and are
+never unfollowed (DC §10), so a URL someone else follows never breaks.
+
 ---
 
 ## 10. Orchestration, failure isolation, alerting
@@ -344,6 +358,9 @@ week's music is present well before doors, late enough to catch same-day changes
 This resolves a contradiction in the PRD, which requires failures to be "visible to the
 user, not silent" (SC7, FR8) while placing all notifications out of scope. Everything is
 queryable via `get_run_health`; only the case you cannot afford to miss pushes.
+
+`ntfy` carries exactly one other message: new artists added to AlxJazz from LaPortas, batched
+once per run (DC §12, [ADR-023](DECISIONS.md#adr-023)).
 
 ---
 
@@ -392,6 +409,11 @@ departure follows directly from weekly playlists.
 The write surface is deliberately this narrow. Even with valid credentials there is no path
 from the MCP server to club config, playlists, or the pipeline. Containment is a security
 property worth preserving as the system grows.
+
+**One amendment** ([ADR-021](DECISIONS.md#adr-021)): the server may also add a venue to, or
+deactivate it from, one of the three hardcoded DC groups. It takes effect on the next daily
+run and cannot create a group, a playlist, or a run. The DC read and write tools are in
+DC §13.
 
 ---
 
@@ -444,8 +466,9 @@ backoff before being recorded as hard failures.
 **Observability.** `run_log` answers, at a glance: did last night's run succeed, which
 clubs failed, and is any club chronically broken. Surfaced via `get_run_health`.
 
-**Scraping conduct.** Six public schedule pages, one polite request each per day, for
-personal use, with no redistribution. `robots.txt` respected. This is not a scaled data
+**Scraping conduct.** Six public schedule pages, one polite request each per day, plus one
+sequential paged pass over CapitalBop's public calendar API (DC §2), for personal use, with
+no redistribution. `robots.txt` respected. This is not a scaled data
 product and should not become one.
 
 **Portability.** Section 2's dependency rule is the whole of it. Business logic holds no

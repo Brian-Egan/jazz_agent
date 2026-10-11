@@ -15,6 +15,9 @@ conflate them.
    by section.
 2. [`docs/DECISIONS.md`](docs/DECISIONS.md) — why things are the way they are.
 3. [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) — schema and the queries it exists to serve.
+4. [`docs/DC.md`](docs/DC.md) — **DC issues** (anything citing "DC §n", CapitalBop, rolling
+   playlists, or venue groups). Extends ARCHITECTURE.md; matching and failure isolation still
+   come from there.
 
 [`docs/original-prd.md`](docs/original-prd.md) is the original PRD, kept
 verbatim. **It is superseded in several places.** Where the PRD and ARCHITECTURE.md disagree,
@@ -26,8 +29,10 @@ from the PRD directly.
 ## How to pick up work
 
 ```bash
-gh issue list --state open --milestone v1
+gh issue list --state open --milestone dc
 ```
+
+Milestone `v1` (NYC) is complete. `dc` implements [`docs/DC.md`](docs/DC.md).
 
 Take the **lowest-numbered issue whose `Blocked by` dependencies are all closed**. Do not
 start a blocked issue. If everything open is blocked, say so rather than guessing at
@@ -68,8 +73,8 @@ asserting this. Do not weaken it.
 ### 4. The daily run is idempotent
 
 Running `pipeline.daily` twice must converge, not accumulate. Reconciliation is a diff
-against `(club_id, week_start_date)`. Never create a playlist without first checking for an
-existing row on that key.
+against `(club_id, week_start_date)` for NYC and `(region, slot_key)` for DC's rolling
+playlists. Never create a playlist without first checking for an existing row on its key.
 
 ### 5. The log is never pruned
 
@@ -77,22 +82,37 @@ Retention unfollows playlists in Spotify and stamps `spotify_removed_at`. It mus
 delete a database row. Removing a playlist from Spotify and deleting its history are
 different operations, and only the first one exists.
 
+The same holds for DC: a track leaving a rolling playlist closes its stint with `removed_at`
+and a `removal_reason`; a venue leaving a group is stamped `deactivated_at`. Rolling
+playlists are never unfollowed — someone else may be following them.
+
 ### 6. Never delete a Spotify playlist
 
 There is no such endpoint. Use `DELETE /v1/playlists/{id}/followers`. If you find code or a
 comment claiming to delete a playlist, it is wrong.
 
-### 7. The MCP write surface is feedback only
+### 7. The MCP write surface is feedback and venue membership only
 
-The MCP server may write exactly one thing: rows in `feedback`. It must not modify club
-config, playlists, matches, or trigger a run. Even with valid credentials there is no path
-from that server to anything else. Preserve this.
+The MCP server may write exactly two things: rows in `feedback`, and add/deactivate rows in
+`venue_group_members` for the three groups hardcoded in `core/dc_groups.py`
+([ADR-021](docs/DECISIONS.md#adr-021)). It must not create groups or playlists, modify NYC
+club config, playlists, tracks, or matches, or trigger a run. Even with valid credentials
+there is no path from that server to anything else. Preserve this.
 
 ### 8. A wrong match is worse than no match
 
 With one full album per artist, a mismatch means 45 minutes of irrelevant music. When in
 doubt, record a `match_misses` row. Do not lower the confidence thresholds in
-ARCHITECTURE.md section 6 to increase coverage.
+ARCHITECTURE.md section 6 to increase coverage. DC's two tracks per artist do not relax
+this: DC playlists are shared with other people.
+
+### 9. A user's removal is final, and inferred only from a complete read
+
+A track Brian deletes from a rolling playlist in Spotify is closed with
+`removal_reason = 'user'` and is never re-added, to any playlist. Removals are inferred only
+from a successful read of **every** page of the playlist, after the ISRC relinking check and
+below the anomaly threshold (DC §11). Write the database before Spotify whenever the
+reconciler itself removes tracks, so its own removals can never look like his.
 
 ---
 
@@ -135,7 +155,14 @@ all stubbed. Fixtures live in `tests/fixtures/`.
   performers are populated.
 - **The idempotency test is the most important one in the suite.** Run the pipeline twice
   against a seeded database and assert `week_playlists` and `playlist_tracks` are identical
-  and that no duplicate Spotify write was issued.
+  and that no duplicate Spotify write was issued. The DC case does the same for
+  `rolling_playlists` and `rolling_playlist_tracks`, including a run where a track was
+  removed in Spotify between runs: one `user` stint closure, one feedback row, never two.
+- **CapitalBop JSON fixtures are committed**, saved from the real API, including a festival
+  day, a `***SOLD OUT***` name, a venue with no address, and a jam session.
+- **Removal detection is tested at each guard**: a failed page records nothing, a relinked
+  track (same ISRC, new ID) is not a removal, and a mass disappearance records nothing and
+  alerts.
 - **The MusicBrainz-independence test** asserts invariant 3 directly. Force the adapter to
   raise and compare the resulting playlist byte-for-byte against the healthy case.
 - **`core/plausibility.py` is the least testable module** — it encodes judgement as
@@ -162,7 +189,9 @@ all stubbed. Fixtures live in `tests/fixtures/`.
 
 ## Scraping conduct
 
-Six public schedule pages, one request each per day, personal use, no redistribution.
+Six public schedule pages, one request each per day, plus one sequential paged pass over
+CapitalBop's calendar API with at least a second between pages (DC §2). Personal use, no
+redistribution.
 Respect `robots.txt`. Send a realistic `User-Agent` — Birdland returns `403` without one.
 MusicBrainz requires a descriptive `User-Agent` with contact details or it rate-limits
 aggressively; it is set in `.env`. Do not parallelise fetches to go faster. There is no
@@ -181,8 +210,11 @@ an issue first.
   `audio-analysis`. These are **withdrawn** for apps registered after November 2024 and will
   return `403`. Artist adjacency comes from MusicBrainz and co-performance
   ([ADR-005](docs/DECISIONS.md#adr-005)).
-- Multi-user support, auth beyond the single-email allow-list, or sharing.
-- Email or SMS notification. Only `ntfy`, only on chronic failure
-  ([ADR-015](docs/DECISIONS.md#adr-015)).
+- Multi-user support or auth beyond the single-email allow-list. The one form of sharing
+  that exists is public playlists others can follow
+  ([ADR-024](docs/DECISIONS.md#adr-024)).
+- Email or SMS notification. Only `ntfy`, and only for chronic failure
+  ([ADR-015](docs/DECISIONS.md#adr-015)) and new artists at LaPortas
+  ([ADR-023](docs/DECISIONS.md#adr-023)).
 - A second database backend. One implementation behind the Protocols, per PRD 8.6's warning
   against speculative multi-backend support.
