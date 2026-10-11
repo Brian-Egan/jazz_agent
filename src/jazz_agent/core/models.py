@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 
 @dataclass(frozen=True, slots=True)
@@ -12,13 +12,18 @@ class Club:
 
     club_id: str
     name: str
-    schedule_url: str
+    # None only for capitalbop_venue rows, which have nothing to fetch (DC section 3).
+    schedule_url: str | None
     render_mode: str = "http"
     week_start_dow: int = 2
     timezone: str = "America/New_York"
     active: bool = True
     notes: str | None = None
     venue_label: str | None = None
+    source: str = "scrape"  # 'scrape' | 'capitalbop_feed' | 'capitalbop_venue'
+    capitalbop_term_id: int | None = None
+    capitalbop_slug: str | None = None
+    city_override: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -192,7 +197,8 @@ class Feedback:
     note_text: str | None = None
     show_id: int | None = None
     week_playlist_id: int | None = None
-    source: str = "mcp"  # 'mcp' | 'manual' | 'implicit'
+    rolling_playlist_id: int | None = None
+    source: str = "mcp"  # 'mcp' | 'manual' | 'implicit' | 'spotify'
 
 
 @dataclass(frozen=True, slots=True)
@@ -205,3 +211,87 @@ class RunLogEntry:
     shows_found: int | None = None
     detail: str | None = None
     duration_ms: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class VenueGroupMember:
+    """A venue's membership in one of the three hardcoded DC groups (DC section 4).
+
+    Open while ``deactivated_at`` is None; deactivating stamps it, re-adding opens a new row.
+    """
+
+    club_id: str
+    group_key: str
+    filter_profile: str
+    added_via: str  # 'seed' | 'mcp' | 'manual'
+    id: int | None = None
+    added_at: datetime | None = None
+    deactivated_at: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class RollingPlaylist:
+    """One of the five permanent DC playlists, keyed ``(region, slot_key)`` (DC section 10)."""
+
+    region: str
+    slot_key: str
+    group_key: str
+    title: str
+    is_public: bool
+    description: str = ""
+    id: int | None = None
+    spotify_playlist_id: str | None = None
+    spotify_url: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class RollingPlaylistTrack:
+    """One stint of a track on a rolling playlist; open while ``removed_at`` is None."""
+
+    rolling_playlist_id: int
+    spotify_track_id: str
+    spotify_album_id: str
+    spotify_artist_id: str
+    position: int
+    isrc: str | None = None
+    track_name: str | None = None
+    show_id: int | None = None
+    id: int | None = None
+    added_at: datetime | None = None
+    removed_at: datetime | None = None
+    removal_reason: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class CapitalbopEvent:
+    """One CapitalBop instance (one date of one event), DC section 2."""
+
+    instance_id: int
+    event_id: int
+    show_id: int
+    start_time: time | None = None
+    price_text: str | None = None
+    ticket_link: str | None = None
+    cb_pick: bool = False
+    tags: tuple[str, ...] = ()
+    repeats: bool = False
+    neighborhoods: tuple[str, ...] = ()
+    geocoded_city: str | None = None
+    description_html: str | None = None
+    description_hash: str | None = None
+    article_title: str | None = None
+    article_url: str | None = None
+    article_date: date | None = None
+    first_seen_at: datetime | None = None
+    last_seen_at: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class RollingPlaylistEvent:
+    """Audit-trail entry for a rolling playlist mutation (playlist_events, DC section 10)."""
+
+    rolling_playlist_id: int
+    event_type: str
+    spotify_artist_id: str | None = None
+    reason: str | None = None
+    detail: dict[str, object] | None = None

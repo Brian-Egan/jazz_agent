@@ -9,7 +9,10 @@ from psycopg_pool import ConnectionPool
 
 from jazz_agent.core.models import Feedback
 
-_COLUMNS = "target_type, target_id, sentiment, note_text, show_id, week_playlist_id, source"
+_COLUMNS = (
+    "target_type, target_id, sentiment, note_text, show_id, week_playlist_id, "
+    "rolling_playlist_id, source"
+)
 
 
 def _row_to_feedback(row: dict[str, Any]) -> Feedback:
@@ -20,6 +23,7 @@ def _row_to_feedback(row: dict[str, Any]) -> Feedback:
         note_text=row["note_text"],
         show_id=row["show_id"],
         week_playlist_id=row["week_playlist_id"],
+        rolling_playlist_id=row["rolling_playlist_id"],
         source=row["source"],
     )
 
@@ -33,7 +37,7 @@ class PgFeedbackRepo:
             cur.execute(
                 f"""
                 INSERT INTO feedback ({_COLUMNS})
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
                 (
@@ -43,6 +47,7 @@ class PgFeedbackRepo:
                     feedback.note_text,
                     feedback.show_id,
                     feedback.week_playlist_id,
+                    feedback.rolling_playlist_id,
                     feedback.source,
                 ),
             )

@@ -273,6 +273,8 @@ def _run_club_pipeline(
     club_logger: logging.LoggerAdapter[logging.Logger],
 ) -> tuple[str, int]:
     fetcher = deps.http_fetcher if club.render_mode == "http" else deps.pw_fetcher
+    if club.schedule_url is None:
+        raise _FetchFailed(f"{club.club_id} has no schedule_url")
     try:
         html = fetcher.get(club.schedule_url, render_mode=club.render_mode)
     except Exception as e:

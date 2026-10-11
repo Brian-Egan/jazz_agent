@@ -27,10 +27,15 @@ MIGRATIONS_DIR = Path(__file__).resolve().parent.parent / "migrations"
 # Listed child-to-parent so a plain DELETE would work too; CASCADE makes the
 # order irrelevant, but a fixed order keeps error messages easy to read.
 ALL_TABLES = (
+    "venue_group_members",
+    "capitalbop_events",
+    "capitalbop_extractions",
+    "rolling_playlist_tracks",
     "feedback",
     "playlist_events",
     "playlist_tracks",
     "week_playlists",
+    "rolling_playlists",
     "mb_artist_edges",
     "mb_lookup_misses",
     "mb_artists",
