@@ -8,6 +8,7 @@ from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
 from jazz_agent.core.models import Feedback
+from jazz_agent.core.novelty import FeedbackEntry
 
 _COLUMNS = (
     "target_type, target_id, sentiment, note_text, show_id, week_playlist_id, "
@@ -66,3 +67,14 @@ class PgFeedbackRepo:
                 (target_type, target_id),
             )
             return [_row_to_feedback(row) for row in cur.fetchall()]
+
+    def novelty_entries(self) -> list[FeedbackEntry]:
+        with self._pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT target_type, target_id, sentiment, created_at FROM feedback
+                WHERE target_type IN ('artist', 'track')
+                ORDER BY created_at, id
+                """
+            )
+            return [FeedbackEntry(*row) for row in cur.fetchall()]

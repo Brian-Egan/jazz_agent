@@ -13,7 +13,7 @@ from jazz_agent.core.models import RollingPlaylist, RollingPlaylistEvent, Rollin
 
 _PLAYLIST_COLUMNS = (
     "id, region, slot_key, group_key, spotify_playlist_id, spotify_url, title, "
-    "description, is_public"
+    "description, is_public, sync_pending"
 )
 _TRACK_COLUMNS = (
     "id, rolling_playlist_id, spotify_track_id, isrc, spotify_album_id, spotify_artist_id, "
@@ -66,6 +66,20 @@ class PgRollingPlaylistRepo:
                 WHERE id = %s
                 """,
                 (spotify_playlist_id, spotify_url, rolling_playlist_id),
+            )
+
+    def set_sync_pending(self, rolling_playlist_id: int, pending: bool) -> None:
+        with self._pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE rolling_playlists SET sync_pending = %s, updated_at = now() WHERE id = %s",
+                (pending, rolling_playlist_id),
+            )
+
+    def set_stint_position(self, stint_id: int, position: int) -> None:
+        with self._pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE rolling_playlist_tracks SET position = %s WHERE id = %s",
+                (position, stint_id),
             )
 
     def get_rolling_playlist(self, region: str, slot_key: str) -> RollingPlaylist | None:

@@ -10,10 +10,11 @@ resolves the PRD's "failures visible" vs "no notifications" contradiction).
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import time
 import uuid
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import Any
@@ -25,6 +26,9 @@ from jazz_agent.core.models import (
     Club,
     PlaylistEvent,
     PlaylistTrack,
+    RollingPlaylist,
+    RollingPlaylistEvent,
+    RollingPlaylistTrack,
     RunLogEntry,
     Show,
     WeekPlaylist,
@@ -32,15 +36,25 @@ from jazz_agent.core.models import (
 from jazz_agent.core.normalize import normalize_act_name
 from jazz_agent.core.weeks import week_start_date
 from jazz_agent.pipeline.adjudicate import adjudicate
+from jazz_agent.pipeline.dc import FEED_CLUB_ID, FEED_CLUB_NAME, DcDependencies, run_dc
 from jazz_agent.pipeline.prune import prune_club
 from jazz_agent.pipeline.reconcile import WeekBooking, reconcile_week
 from jazz_agent.pipeline.verify import verify_and_correct
+from jazz_agent.ports.calendar import CalendarFetchError
 from jazz_agent.ports.extractor import Extractor
 from jazz_agent.ports.fetcher import Fetcher
 from jazz_agent.ports.graph import GraphService
 from jazz_agent.ports.music import MusicService
 from jazz_agent.ports.notifier import Notifier
-from jazz_agent.ports.repository import ArtistRepo, ClubRepo, PlaylistRepo, RunRepo, ShowRepo
+from jazz_agent.ports.repository import (
+    ArtistRepo,
+    ClubRepo,
+    PlaylistRepo,
+    RollingPlaylistRepo,
+    RunLock,
+    RunRepo,
+    ShowRepo,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +85,9 @@ class Dependencies:
     llm_client: anthropic.Anthropic
     extraction_model: str
     adjudication_model: str
+    # Washington, D.C. (docs/DC.md). None leaves the run NYC-only.
+    dc: DcDependencies | None = None
+    run_lock: RunLock | None = None
 
 
 class DryRunMusicService:
@@ -202,6 +219,54 @@ class DryRunPlaylistRepo:
         logger.info("DRY_RUN: would mark week_playlist %d removed", week_playlist_id)
 
 
+class DryRunRollingRepo:
+    """Wraps a RollingPlaylistRepo for DRY_RUN: every write that records playlist state is
+    logged and skipped, so a dry run leaves no stint, event, link or playlist row behind (the
+    NYC wrapper's lesson: state recorded without the Spotify call a later run trusts is
+    corruption). Reads pass through, so the planned lists are computed from real state."""
+
+    def __init__(self, inner: RollingPlaylistRepo) -> None:
+        self._inner = inner
+
+    def upsert_rolling_playlist(self, playlist: RollingPlaylist) -> int:
+        existing = self._inner.get_rolling_playlist(playlist.region, playlist.slot_key)
+        if existing is not None and existing.id is not None:
+            logger.info("DRY_RUN: would update rolling playlist %s", playlist.slot_key)
+            return existing.id
+        logger.info("DRY_RUN: would create rolling_playlists row %s", playlist.slot_key)
+        return -1  # never a real id: nothing downstream may treat it as stored
+
+    def link_spotify_playlist(
+        self, rolling_playlist_id: int, spotify_playlist_id: str, spotify_url: str
+    ) -> None:
+        logger.info("DRY_RUN: would link rolling playlist %d", rolling_playlist_id)
+
+    def get_rolling_playlist(self, region: str, slot_key: str) -> RollingPlaylist | None:
+        return self._inner.get_rolling_playlist(region, slot_key)
+
+    def set_sync_pending(self, rolling_playlist_id: int, pending: bool) -> None:
+        logger.info("DRY_RUN: would set sync_pending=%s on %d", pending, rolling_playlist_id)
+
+    def set_stint_position(self, stint_id: int, position: int) -> None:
+        logger.info("DRY_RUN: would move stint %d to position %d", stint_id, position)
+
+    def open_stints(self, rolling_playlist_id: int) -> list[RollingPlaylistTrack]:
+        return self._inner.open_stints(rolling_playlist_id) if rolling_playlist_id > 0 else []
+
+    def open_stint(self, track: RollingPlaylistTrack) -> int:
+        logger.info("DRY_RUN: would open stint for %s", track.spotify_track_id)
+        return -1
+
+    def close_stint(self, stint_id: int, reason: str, at: datetime) -> None:
+        logger.info("DRY_RUN: would close stint %d (%s)", stint_id, reason)
+
+    def user_removed_track_ids(self) -> set[str]:
+        return self._inner.user_removed_track_ids()
+
+    def record_event(self, event: RollingPlaylistEvent) -> None:
+        logger.info("DRY_RUN: would record rolling playlist event %r", event)
+
+
 def run_daily(
     deps: Dependencies,
     today: date,
@@ -237,8 +302,86 @@ def run_daily(
         except Exception:
             club_logger.exception("retention prune failed")
 
+    if deps.dc is not None:
+        _run_dc_unit(deps, deps.dc, run_id, today, music, dry_run, now, chronic_failure_threshold)
+
     deps.run_repo.log_run_outcome(RunLogEntry(run_id=run_id, outcome="success"))
     return run_id
+
+
+def _run_dc_unit(
+    deps: Dependencies,
+    dc: DcDependencies,
+    run_id: str,
+    today: date,
+    music: MusicService,
+    dry_run: bool,
+    now: datetime,
+    chronic_failure_threshold: int,
+) -> None:
+    """DC after the NYC clubs, in its own try/except, one run_log row on ``capitalbop``
+    (DC section 14). Never raises: DC failing must not mask the NYC run it follows."""
+    dc_logger = logging.LoggerAdapter(logger, {"run_id": run_id, "club_id": FEED_CLUB_ID})
+    feed = Club(club_id=FEED_CLUB_ID, name=FEED_CLUB_NAME, schedule_url=None)
+    rolling_repo = DryRunRollingRepo(dc.rolling_repo) if dry_run else dc.rolling_repo
+    start = time.monotonic()
+    shows_found: int | None = None
+    detail: str | None = None
+
+    try:
+        # Runs can overlap (no mutual exclusion in cron or here); two DC runs at once could
+        # create a playlist twice, so only one proceeds.
+        with _lock(deps.run_lock, "jazz_agent.dc") as acquired:
+            if not acquired:
+                dc_logger.warning("another DC run holds the lock; skipping")
+                return
+            result = run_dc(
+                dc,
+                deps.show_repo,
+                deps.artist_repo,
+                deps.extractor,
+                deps.graph,
+                deps.llm_client,
+                deps.extraction_model,
+                deps.adjudication_model,
+                music,
+                rolling_repo,
+                today,
+                now,
+            )
+        outcome, shows_found, detail = result.outcome, result.shows_found, result.detail
+        if dry_run:
+            for slot_key, names in result.planned.items():
+                dc_logger.info("DRY_RUN: %s would hold %d tracks: %s", slot_key, len(names), names)
+    except CalendarFetchError as e:
+        outcome, detail = "fetch_fail", str(e)
+        dc_logger.exception("DC fetch failed; no DC playlist was touched")
+    except Exception as e:
+        outcome, detail = "extract_fail", str(e)
+        dc_logger.exception("DC run failed")
+
+    deps.run_repo.log_run_outcome(
+        RunLogEntry(
+            run_id=run_id,
+            club_id=FEED_CLUB_ID,
+            outcome=outcome,
+            shows_found=shows_found,
+            detail=detail,
+            duration_ms=int((time.monotonic() - start) * 1000),
+        )
+    )
+    _maybe_alert_chronic_failure(
+        feed, deps.run_repo, deps.notifier, chronic_failure_threshold, dc_logger
+    )
+
+
+@contextlib.contextmanager
+def _lock(lock: RunLock | None, name: str) -> Iterator[bool]:
+    if lock is None:
+        yield True
+        return
+    with lock.hold(name) as acquired:
+        yield acquired
 
 
 def run_club(
@@ -453,16 +596,23 @@ def main() -> int:
     """Cron entry point: `uv run python -m jazz_agent.pipeline.daily`, scheduled
     at RUN_HOUR_ET. Wires real adapters from config.py -- the only module that
     reads the environment (AGENTS.md invariant 2)."""
+    from jazz_agent.adapters.capitalbop import CapitalbopClient
     from jazz_agent.adapters.http_fetcher import HttpFetcher
     from jazz_agent.adapters.musicbrainz import MusicBrainzClient
     from jazz_agent.adapters.ntfy import NtfyNotifier
     from jazz_agent.adapters.pg.artist_repo import PgArtistRepo
+    from jazz_agent.adapters.pg.capitalbop_repo import PgCapitalbopRepo
     from jazz_agent.adapters.pg.club_repo import PgClubRepo
+    from jazz_agent.adapters.pg.feedback_repo import PgFeedbackRepo
     from jazz_agent.adapters.pg.graph_repo import PgGraphRepo
     from jazz_agent.adapters.pg.playlist_repo import PgPlaylistRepo
     from jazz_agent.adapters.pg.pool import make_pool
+    from jazz_agent.adapters.pg.rolling_playlist_repo import PgRollingPlaylistRepo
+    from jazz_agent.adapters.pg.run_lock import PgRunLock
     from jazz_agent.adapters.pg.run_repo import PgRunRepo
     from jazz_agent.adapters.pg.show_repo import PgShowRepo
+    from jazz_agent.adapters.pg.venue_group_repo import PgVenueGroupRepo
+    from jazz_agent.adapters.pg.venue_repo import PgVenueRepo
     from jazz_agent.adapters.pw_fetcher import PlaywrightFetcher
     from jazz_agent.adapters.spotify import SpotifyClient
     from jazz_agent.config import load_config
@@ -497,6 +647,16 @@ def main() -> int:
         llm_client=llm_client,
         extraction_model=config.extraction_model,
         adjudication_model=config.adjudication_model,
+        dc=DcDependencies(
+            calendar=CapitalbopClient(),
+            venue_repo=PgVenueRepo(pool),
+            capitalbop_repo=PgCapitalbopRepo(pool),
+            rolling_repo=PgRollingPlaylistRepo(pool),
+            group_repo=PgVenueGroupRepo(pool),
+            feedback_repo=PgFeedbackRepo(pool),
+            novelty_liked_days=config.novelty_liked_days,
+        ),
+        run_lock=PgRunLock(pool),
     )
 
     run_id = run_daily(
