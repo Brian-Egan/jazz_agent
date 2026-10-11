@@ -26,6 +26,7 @@ from jazz_agent.core.eligibility import (
     is_ticketed,
     passes_profile,
     plan_playlists,
+    planned_instance_ids,
     starts_early_evening,
 )
 from jazz_agent.core.normalize import clean_act_name, normalize_listing_name
@@ -492,3 +493,43 @@ def test_no_snapshot_show_lands_in_two_playlists() -> None:
     multi = [e for e in events if len(eligible_groups(e, members, counts)) > 1]
 
     assert multi == []
+
+
+def test_planned_instance_ids_cover_every_eligible_date_of_a_planned_act_only() -> None:
+    events = [
+        event(instance_id=1, show_date=date(2026, 10, 13)),  # planned act, first date
+        event(instance_id=2, show_date=date(2026, 10, 27)),  # same act, a later slot
+        event(
+            instance_id=3,
+            show_date=date(2026, 10, 14),
+            act_name="Free",
+            act_name_norm="Free",
+            price="Free",
+        ),  # ineligible: free
+        event(
+            instance_id=4,
+            show_date=date(2026, 10, 14),
+            act_name="Late",
+            act_name_norm="Late",
+            start_time=time(15, 0),
+        ),  # ineligible: not evening
+        event(
+            instance_id=5,
+            show_date=date(2026, 10, 14),
+            act_name="Jam",
+            act_name_norm="Jam",
+            tags=("jam-session",),
+        ),
+    ]
+
+    assert planned_instance_ids(events, [], TODAY) == {1, 2}
+
+
+def test_planned_instance_ids_leave_out_acts_the_cap_dropped() -> None:
+    day = date(2026, 10, 13)
+    events = [_act(n, day, cb_pick=n <= 12) for n in range(1, 15)]  # 12 picks, 2 non-picks
+
+    planned = planned_instance_ids(events, [], TODAY)
+
+    assert len(plan_playlists(events, [], TODAY)["next-2-weeks"]) == 12
+    assert planned == set(range(1, 13))

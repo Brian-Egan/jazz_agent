@@ -241,3 +241,48 @@ def test_needs_review_boundary_matches_accept_threshold(confidence: float) -> No
     else:
         assert result.matched_artist is not None
         assert result.matched_artist.needs_review == (confidence < 0.80)
+
+
+CHUCHO_VALDES = {
+    "id": "chucho-valdes",
+    "name": "Chucho Valdés",
+    "genres": ["afro-cuban jazz", "latin jazz", "jazz"],
+    "popularity": 55,
+    "followers": {"total": 400_000},
+}
+CHUCHITO_VALDES = {
+    "id": "chuchito-valdes",
+    "name": "Chuchito Valdés",
+    "genres": ["afro-cuban jazz", "latin jazz"],
+    "popularity": 28,
+    "followers": {"total": 9_000},
+}
+
+
+def test_valdes_pair_both_reach_the_adjudicator_and_the_verdict_decides() -> None:
+    """DC section 7: a same-surname generational pair (father Chucho, son Chuchito) booked
+    in one window. Both survive plausibility, so the adjudicator sees both and its pick
+    stands; a listing for the son must resolve to the son."""
+    music = FakeMusicService([CHUCHO_VALDES, CHUCHITO_VALDES])
+    llm = FakeAnthropicClient(
+        {"artist_id": CHUCHITO_VALDES["id"], "confidence": 0.9, "reasoning": "son, not father"}
+    )
+
+    result = adjudicate(7, "Chuchito Valdés", "raw text", music, llm, "claude-haiku-4-5")  # type: ignore[arg-type]
+
+    prompt = str(llm.messages.calls[0]["messages"])
+    assert CHUCHO_VALDES["id"] in prompt and CHUCHITO_VALDES["id"] in prompt
+    assert result.matched_artist is not None
+    assert result.matched_artist.spotify_artist_id == CHUCHITO_VALDES["id"]
+
+
+def test_valdes_pair_uncertain_verdict_is_a_miss_not_the_other_valdes() -> None:
+    """Invariant 8: when the adjudicator cannot tell father from son, a logged miss is the
+    right answer -- never a confident-looking guess at the wrong generation."""
+    music = FakeMusicService([CHUCHO_VALDES, CHUCHITO_VALDES])
+    llm = FakeAnthropicClient({"artist_id": None, "confidence": 0.2, "reasoning": "ambiguous"})
+
+    result = adjudicate(7, "Valdés", "raw text", music, llm, "claude-haiku-4-5")  # type: ignore[arg-type]
+
+    assert result.matched_artist is None
+    assert result.match_miss is not None
