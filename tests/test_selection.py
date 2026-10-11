@@ -1,4 +1,11 @@
-from jazz_agent.core.selection import order_tracks, select_album
+import pytest
+
+from jazz_agent.core.selection import (
+    normalize_track_title,
+    order_tracks,
+    select_album,
+    select_tracks,
+)
 
 
 def _album(
@@ -160,3 +167,127 @@ def test_order_tracks_defaults_missing_disc_number_to_one() -> None:
     ordered = order_tracks(tracks)
 
     assert [t["id"] for t in ordered] == ["t1", "t2"]
+
+
+# --- select_tracks (DC section 8) ---------------------------------------------------------
+
+ME = "artist-me"
+
+
+def _t(track_id: str, name: str, album: str, artist: str = ME, **extra: object) -> dict:
+    return {
+        "id": track_id,
+        "name": name,
+        "album": {"id": album},
+        "artists": [{"id": artist}, {"id": "someone-else"}],
+        **extra,
+    }
+
+
+def _ids(tracks: list[dict]) -> list[str]:
+    return [t["id"] for t in tracks]
+
+
+def test_sideman_appearances_are_excluded() -> None:
+    results = [
+        _t("side", "Blue in Green", "a-other", artist="leader"),  # first artist is not ours
+        _t("mine1", "So What", "a1"),
+        _t("mine2", "Freddie", "a2"),
+    ]
+
+    assert _ids(select_tracks(ME, results, [])) == ["mine1", "mine2"]
+
+
+def test_a_track_where_we_are_only_second_listed_does_not_count() -> None:
+    track = {"id": "t", "name": "X", "album": {"id": "a"}, "artists": [{"id": "boss"}, {"id": ME}]}
+
+    assert select_tracks(ME, [track], []) == []
+
+
+def test_live_remaster_and_alternate_take_duplicates_are_dropped() -> None:
+    results = [
+        _t("orig", "So What", "a1"),
+        _t("live", "So What - Live at the Vanguard", "a2"),
+        _t("remaster", "So What (Remastered 2011)", "a3"),
+        _t("alt", "So What - Alternate Take", "a4"),
+        _t("other", "Blue in Green", "a5"),
+    ]
+
+    assert _ids(select_tracks(ME, results, [])) == ["orig", "other"]
+
+
+@pytest.mark.parametrize(
+    ("title", "expected"),
+    [
+        ("So What - Live", "so what"),
+        ("So What - Live at Montreux, 1991", "so what"),
+        ("So What (Live)", "so what"),
+        ("So What (Remastered 2009)", "so what"),
+        ("So What - 2011 Remaster", "so what"),
+        ("So What - Remastered", "so what"),
+        ("So What Alternate Take", "so what"),
+        ("Alive Again", "alive again"),  # "live" inside a word is not a version marker
+        ("Blue (Part 2)", "blue (part 2)"),  # an unrelated bracket stays
+    ],
+)
+def test_title_normalisation(title: str, expected: str) -> None:
+    assert normalize_track_title(title) == expected
+
+
+def test_two_different_albums_are_preferred_over_two_from_one_album() -> None:
+    results = [
+        _t("a1-first", "One", "alb1"),
+        _t("a1-second", "Two", "alb1"),
+        _t("a2-first", "Three", "alb2"),
+    ]
+
+    assert _ids(select_tracks(ME, results, [])) == ["a1-first", "a2-first"]
+
+
+def test_same_album_is_accepted_when_there_is_no_other() -> None:
+    results = [_t("x", "One", "alb1"), _t("y", "Two", "alb1")]
+
+    assert _ids(select_tracks(ME, results, [])) == ["x", "y"]
+
+
+def test_fallback_fills_from_the_opening_tracks_of_the_album() -> None:
+    album_tracks = [
+        {"id": "trk3", "name": "Third", "track_number": 3},
+        {"id": "trk1", "name": "First", "track_number": 1},
+        {"id": "trk2", "name": "Second", "track_number": 2},
+    ]
+    results = [_t("found", "Only One", "alb1")]
+
+    assert _ids(select_tracks(ME, results, album_tracks)) == ["found", "trk1"]
+    assert _ids(select_tracks(ME, [], album_tracks)) == ["trk1", "trk2"]
+
+
+def test_fallback_skips_a_title_already_chosen() -> None:
+    album_tracks = [
+        {"id": "alb-sowhat", "name": "So What (Remastered)", "track_number": 1},
+        {"id": "alb-2", "name": "Freddie", "track_number": 2},
+    ]
+    results = [_t("found", "So What", "alb1")]
+
+    assert _ids(select_tracks(ME, results, album_tracks)) == ["found", "alb-2"]
+
+
+def test_fallback_album_is_fetched_only_when_needed() -> None:
+    calls: list[int] = []
+
+    def fetch() -> list[dict]:
+        calls.append(1)
+        return [{"id": "f1", "name": "F", "track_number": 1}]
+
+    full = [_t("a", "One", "x"), _t("b", "Two", "y")]
+    select_tracks(ME, full, fetch)
+    assert calls == []
+
+    select_tracks(ME, [], fetch)
+    assert calls == [1]
+
+
+def test_selection_order_is_search_rank_order() -> None:
+    results = [_t("r1", "One", "alb1"), _t("r2", "Two", "alb1"), _t("r3", "Three", "alb2")]
+
+    assert _ids(select_tracks(ME, results, [])) == ["r1", "r3"]

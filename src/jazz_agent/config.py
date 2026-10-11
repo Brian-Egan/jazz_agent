@@ -53,6 +53,8 @@ class Config:
     tracks_match_accept: float
     tracks_match_review: float
     dry_run: bool
+    # DC novelty (DC section 9, ADR-019): days a `liked` artist stays off the playlists.
+    novelty_liked_days: int
 
     # ---------- MCP server ----------
     mcp_host: str
@@ -111,6 +113,7 @@ def load_config() -> Config:
         tracks_match_accept=float(env.get("TRACKS_MATCH_ACCEPT", "0.80")),
         tracks_match_review=float(env.get("TRACKS_MATCH_REVIEW", "0.50")),
         dry_run=_bool(env.get("DRY_RUN"), False),
+        novelty_liked_days=int(env.get("NOVELTY_LIKED_DAYS", "182")),
         mcp_host=env.get("MCP_HOST", "0.0.0.0"),
         mcp_port=int(env.get("MCP_PORT", "8080")),
         mcp_public_url=env.get("MCP_PUBLIC_URL", ""),

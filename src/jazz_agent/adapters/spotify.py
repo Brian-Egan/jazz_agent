@@ -23,6 +23,8 @@ _TOKEN_URL = "https://accounts.spotify.com/api/token"  # noqa: S105 -- URL, not 
 _API_BASE = "https://api.spotify.com/v1"
 _RETRYABLE_STATUS = {500, 502, 503, 504}
 _MAX_TRACKS_PER_REQUEST = 100
+_MAX_SEARCH_LIMIT = 10  # Feb 2026: /search limit max 50 -> 10
+_PLAYLIST_ITEMS_PAGE = 50
 
 
 def _chunk(items: Sequence[Any], size: int) -> list[list[Any]]:
@@ -142,7 +144,7 @@ class SpotifyClient:
         response = self._request("GET", f"/albums/{spotify_album_id}/tracks", params={"limit": 50})
         return response.json()["items"]  # type: ignore[no-any-return]
 
-    def create_playlist(self, title: str, description: str) -> dict[str, Any]:
+    def create_playlist(self, title: str, description: str, public: bool = False) -> dict[str, Any]:
         # POST /users/{user_id}/playlists 403s for apps registered after the
         # Nov 2024 changes (ADR-005) -- confirmed live against the real API.
         # /me/playlists is the one that still works and needs no separate
@@ -150,7 +152,7 @@ class SpotifyClient:
         response = self._request(
             "POST",
             "/me/playlists",
-            json={"name": title, "description": description, "public": False},
+            json={"name": title, "description": description, "public": public},
         )
         return response.json()  # type: ignore[no-any-return]
 
@@ -182,6 +184,80 @@ class SpotifyClient:
             self._request(
                 "DELETE", f"/playlists/{spotify_playlist_id}/items", json={"items": batch}
             )
+
+    def search_tracks(self, query: str, limit: int = 10) -> list[dict[str, Any]]:
+        # Feb 2026 migration: /search `limit` max fell from 50 to 10 (default 5), so a larger
+        # request is paged with `offset` rather than sent as one call
+        # (docs/research/spotify-playlist-write-403.md; migration guide, "Search").
+        # DC ranks tracks by this relevance order because the `popularity` field was
+        # removed in the same migration (ADR-020).
+        tracks: list[dict[str, Any]] = []
+        while len(tracks) < limit:
+            page = min(_MAX_SEARCH_LIMIT, limit - len(tracks))
+            response = self._request(
+                "GET",
+                "/search",
+                params={"q": query, "type": "track", "limit": page, "offset": len(tracks)},
+            )
+            items = response.json()["tracks"]["items"]
+            tracks.extend(items)
+            if len(items) < page:
+                break
+        return tracks
+
+    def get_playlist_items(self, spotify_playlist_id: str) -> list[dict[str, Any]]:
+        # GET .../tracks was removed in the Feb 2026 migration; .../items replaces it, and
+        # each entry's `track` object was renamed `item` (`tracks.tracks.track` ->
+        # `items.items.item`). Both names are read so a deployment mid-rollout still works.
+        # `external_ids` (the ISRC) was removed then reverted in March 2026.
+        # Raises on any failed page: a partial read must never look like a removal.
+        found: list[dict[str, Any]] = []
+        offset = 0
+        while True:
+            response = self._request(
+                "GET",
+                f"/playlists/{spotify_playlist_id}/items",
+                params={"limit": _PLAYLIST_ITEMS_PAGE, "offset": offset},
+            )
+            payload = response.json()
+            entries = payload["items"]
+            for entry in entries:
+                track = entry.get("item") or entry.get("track")
+                if not track or not track.get("id"):
+                    continue
+                found.append(
+                    {
+                        "id": track["id"],
+                        "isrc": (track.get("external_ids") or {}).get("isrc"),
+                        "name": track.get("name"),
+                    }
+                )
+            if payload.get("next") is None:
+                return found
+            offset += len(entries)
+
+    def replace_playlist_items(
+        self, spotify_playlist_id: str, spotify_track_ids: Sequence[str]
+    ) -> None:
+        # PUT .../tracks -> PUT .../items in the Feb 2026 migration; same {"uris": [...]}
+        # body. One PUT carries at most 100 URIs: it replaces with the first batch and the
+        # rest are appended in order.
+        uris = [f"spotify:track:{track_id}" for track_id in spotify_track_ids]
+        batches = _chunk(uris, _MAX_TRACKS_PER_REQUEST) or [[]]
+        self._request("PUT", f"/playlists/{spotify_playlist_id}/items", json={"uris": batches[0]})
+        for batch in batches[1:]:
+            self._request("POST", f"/playlists/{spotify_playlist_id}/items", json={"uris": batch})
+
+    def update_playlist_details(
+        self, spotify_playlist_id: str, title: str, description: str
+    ) -> None:
+        # PUT /playlists/{id} (name, description, visibility) is listed under "endpoints still
+        # available" in the Feb 2026 changelog, so it kept its path. Visibility is left alone.
+        self._request(
+            "PUT",
+            f"/playlists/{spotify_playlist_id}",
+            json={"name": title, "description": description},
+        )
 
     def unfollow_playlist(self, spotify_playlist_id: str) -> None:
         self._request("DELETE", f"/playlists/{spotify_playlist_id}/followers")

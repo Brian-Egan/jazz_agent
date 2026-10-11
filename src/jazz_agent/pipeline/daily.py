@@ -92,11 +92,31 @@ class DryRunMusicService:
     def get_album_tracks(self, spotify_album_id: str) -> list[dict[str, Any]]:
         return self._inner.get_album_tracks(spotify_album_id)
 
-    def create_playlist(self, title: str, description: str) -> dict[str, Any]:
+    def create_playlist(self, title: str, description: str, public: bool = False) -> dict[str, Any]:
         fake_id = f"dry-run-playlist-{self._next_fake_id}"
         self._next_fake_id += 1
         logger.info("DRY_RUN: would create playlist %r (%r)", title, description)
         return {"id": fake_id, "external_urls": {"spotify": f"https://dry-run.invalid/{fake_id}"}}
+
+    def search_tracks(self, query: str, limit: int = 10) -> list[dict[str, Any]]:
+        return self._inner.search_tracks(query, limit)
+
+    def get_playlist_items(self, spotify_playlist_id: str) -> list[dict[str, Any]]:
+        if spotify_playlist_id.startswith("dry-run-"):
+            return []
+        return self._inner.get_playlist_items(spotify_playlist_id)
+
+    def replace_playlist_items(
+        self, spotify_playlist_id: str, spotify_track_ids: Sequence[str]
+    ) -> None:
+        logger.info(
+            "DRY_RUN: would replace %s with %d tracks", spotify_playlist_id, len(spotify_track_ids)
+        )
+
+    def update_playlist_details(
+        self, spotify_playlist_id: str, title: str, description: str
+    ) -> None:
+        logger.info("DRY_RUN: would retitle %s to %r", spotify_playlist_id, title)
 
     def get_playlist(self, spotify_playlist_id: str) -> dict[str, Any] | None:
         if spotify_playlist_id.startswith("dry-run-"):
