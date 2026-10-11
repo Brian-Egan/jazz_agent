@@ -1,0 +1,872 @@
+{
+ "events": [
+  {
+   "id": 37233,
+   "event_id": 37232,
+   "name": "Allyn Johnson Organ Trio",
+   "start_date": "2026-10-19",
+   "start_date_display": "Monday, October 19",
+   "start_time": "19:00:00",
+   "start_time_display": "7pm",
+   "start_time_display_short": "7:00pm",
+   "venue": {
+    "term_id": 2291,
+    "name": "Blues Alley",
+    "slug": "blues-alley",
+    "term_group": 0,
+    "term_taxonomy_id": 2291,
+    "taxonomy": "venue",
+    "description": "",
+    "parent": 0,
+    "count": 954,
+    "filter": "raw",
+    "term_order": "0"
+   },
+   "venue_detail": {
+    "address": "1073 Wisconsin Ave NW, Washington, DC 20007",
+    "geolocation": {
+     "address": "1073 Wisconsin Ave NW, Washington, DC 20007, USA",
+     "lat": 38.9046891,
+     "lng": -77.06255809999999,
+     "zoom": 14,
+     "place_id": "ChIJF-m8V0m2t4kRzIqB6avGTqQ",
+     "name": "1073 Wisconsin Ave NW",
+     "street_number": "1073",
+     "street_name": "Wisconsin Avenue Northwest",
+     "street_name_short": "Wisconsin Ave NW",
+     "city": "Washington",
+     "state": "District of Columbia",
+     "state_short": "DC",
+     "post_code": "20007",
+     "country": "United States",
+     "country_short": "US"
+    }
+   },
+   "cb_show": false,
+   "cb_pick": true,
+   "tags": [
+    {
+     "term_id": 2263,
+     "name": "All Ages",
+     "slug": "all-ages",
+     "term_group": 0,
+     "term_taxonomy_id": 2263,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 6761,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 20,
+     "name": "CB Pick",
+     "slug": "cb-pick",
+     "term_group": 0,
+     "term_taxonomy_id": 20,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 3456,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2259,
+     "name": "Drink Minimum",
+     "slug": "drink-minimum",
+     "term_group": 0,
+     "term_taxonomy_id": 2259,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 3801,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 19,
+     "name": "Full Menu",
+     "slug": "full-menu",
+     "term_group": 0,
+     "term_taxonomy_id": 19,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 9077,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "neighborhoods": [
+    {
+     "term_id": 2418,
+     "name": "District of Columbia",
+     "slug": "dc",
+     "term_group": 0,
+     "term_taxonomy_id": 2418,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 0,
+     "count": 6411,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2272,
+     "name": "Georgetown/Dupont Circle",
+     "slug": "georgetown-dupont-circle",
+     "term_group": 0,
+     "term_taxonomy_id": 2272,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 2419,
+     "count": 1766,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2419,
+     "name": "Northwest",
+     "slug": "northwest",
+     "term_group": 0,
+     "term_taxonomy_id": 2419,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 2418,
+     "count": 5090,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "description": "<p>Pianist Allyn Johnson, the “Dean of D.C. Jazz,” and head of the jazz program at UDC is a figurehead in the local jazz scene. He is lion-like on the ivories, punching out colorful, complex chords and harmonies that spread constantly through the music.</p>\n<p>Here he performs on the organ, alongside Tedd Baker on saxophone and Eric Kennedy on drums.</p>\n<p>Two separate sets at 7 and 9:30 p.m.</p>\n",
+   "ticket_link": {
+    "title": "",
+    "url": "https://www.instantseats.com/index.cfm?fuseaction=home.venue&venueid=3",
+    "target": "_blank"
+   },
+   "price": "$25 (Plus $15 Minimum and $7 Fees)",
+   "musicians_website": {
+    "title": "artist's instagram",
+    "url": "https://www.instagram.com/allynjohnson88/?hl=en",
+    "target": "_blank"
+   },
+   "image": "<img width=\"203\" height=\"135\" src=\"https://www.capitalbop.com/app/uploads/2025/04/allyn-johnson-025.jpg\" class=\"attachment-meganav-sm size-meganav-sm\" alt=\"\" decoding=\"async\" srcset=\"https://www.capitalbop.com/app/uploads/2025/04/allyn-johnson-025.jpg 600w, https://www.capitalbop.com/app/uploads/2025/04/allyn-johnson-025-300x200.jpg 300w\" sizes=\"(max-width: 203px) 100vw, 203px\" />",
+   "repeats": false
+  },
+  {
+   "id": 36773,
+   "event_id": 36761,
+   "name": "Knox Engler Duo: Bonne Vie Jazz Brunch",
+   "start_date": "2026-10-11",
+   "start_date_display": "Sunday, October 11",
+   "start_time": "12:00:00",
+   "start_time_display": "12pm",
+   "start_time_display_short": "12:00pm",
+   "venue": {
+    "term_id": 2579,
+    "name": "Bonne Vie Cafe &amp; Bistro",
+    "slug": "bonne-vie-cafe",
+    "term_group": 0,
+    "term_taxonomy_id": 2579,
+    "taxonomy": "venue",
+    "description": "",
+    "parent": 0,
+    "count": 164,
+    "filter": "raw",
+    "term_order": "0"
+   },
+   "venue_detail": {
+    "address": "",
+    "geolocation": {
+     "address": "Bonne Vie Cafe and Bistro, 1604 U Street Northwest, Washington, DC 20009, USA",
+     "lat": 38.9170166,
+     "lng": -77.0368702,
+     "zoom": 14,
+     "place_id": "ChIJPbmbjdG3t4kRU8LuYbYtKoY",
+     "name": "Bonne Vie Cafe and Bistro",
+     "street_number": "1604",
+     "street_name": "U Street Northwest",
+     "street_name_short": "U St NW",
+     "city": "Washington",
+     "state": "District of Columbia",
+     "state_short": "DC",
+     "post_code": "20009",
+     "country": "United States",
+     "country_short": "US"
+    }
+   },
+   "cb_show": false,
+   "cb_pick": false,
+   "tags": [
+    {
+     "term_id": 2263,
+     "name": "All Ages",
+     "slug": "all-ages",
+     "term_group": 0,
+     "term_taxonomy_id": 2263,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 6761,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 19,
+     "name": "Full Menu",
+     "slug": "full-menu",
+     "term_group": 0,
+     "term_taxonomy_id": 19,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 9077,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2270,
+     "name": "No Cover",
+     "slug": "no-cover",
+     "term_group": 0,
+     "term_taxonomy_id": 2270,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 2546,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "neighborhoods": [
+    {
+     "term_id": 2418,
+     "name": "District of Columbia",
+     "slug": "dc",
+     "term_group": 0,
+     "term_taxonomy_id": 2418,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 0,
+     "count": 6411,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2419,
+     "name": "Northwest",
+     "slug": "northwest",
+     "term_group": 0,
+     "term_taxonomy_id": 2419,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 2418,
+     "count": 5090,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 23,
+     "name": "U Street Corridor",
+     "slug": "u-street-corridor",
+     "term_group": 0,
+     "term_taxonomy_id": 23,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 2419,
+     "count": 1412,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "description": "<p>D.C. guitarist Knox Engler plays what he calls progressive math rock &#8211; think rhythms and beats complex enough to make Dave Brubeck&#8217;s experimentations in &#8220;taking five&#8221; seem like four on the floor.</p>\n<p>He performs every Saturday and Sunday at Bonnie Vie Cafe and Bistro for their weekend jazz brunch, which it says are inspired by &#8220;the sounds of old world Paris.&#8221;</p>\n<p>&nbsp;</p>\n",
+   "ticket_link": "",
+   "price": "",
+   "musicians_website": {
+    "title": "artist's facebook page",
+    "url": "https://www.facebook.com/knoxenglermusic/",
+    "target": "_blank"
+   },
+   "image": null,
+   "repeats": true
+  },
+  {
+   "id": 33486,
+   "event_id": 28734,
+   "name": "The White House Band",
+   "start_date": "2026-10-11",
+   "start_date_display": "Sunday, October 11",
+   "start_time": "18:00:00",
+   "start_time_display": "6pm",
+   "start_time_display_short": "6:00pm",
+   "venue": {
+    "term_id": 2455,
+    "name": "Bourbon Boulevard",
+    "slug": "bourban-boulevard",
+    "term_group": 0,
+    "term_taxonomy_id": 2455,
+    "taxonomy": "venue",
+    "description": "",
+    "parent": 0,
+    "count": 665,
+    "filter": "raw",
+    "term_order": "0"
+   },
+   "venue_detail": {
+    "address": "",
+    "geolocation": {
+     "address": "Bourbon Boulevard Steakhouse, Chantilly Shopping Center, Chantilly, VA, USA",
+     "lat": 38.8867897,
+     "lng": -77.4422814,
+     "zoom": 14,
+     "place_id": "ChIJ1-T_90xFtokRvqS3VxmQVRY",
+     "name": "Bourbon Boulevard Steakhouse",
+     "street_number": "4301",
+     "street_name": "Chantilly Shopping Center",
+     "city": "Chantilly",
+     "state": "Virginia",
+     "state_short": "VA",
+     "post_code": "20151",
+     "country": "United States",
+     "country_short": "US"
+    }
+   },
+   "cb_show": false,
+   "cb_pick": false,
+   "tags": [
+    {
+     "term_id": 19,
+     "name": "Full Menu",
+     "slug": "full-menu",
+     "term_group": 0,
+     "term_taxonomy_id": 19,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 9077,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 22,
+     "name": "Limited Seating",
+     "slug": "limited-seating",
+     "term_group": 0,
+     "term_taxonomy_id": 22,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 2507,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "neighborhoods": [
+    {
+     "term_id": 2456,
+     "name": "Chantilly",
+     "slug": "chantilly",
+     "term_group": 0,
+     "term_taxonomy_id": 2456,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 2269,
+     "count": 668,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2269,
+     "name": "Virginia",
+     "slug": "virginia",
+     "term_group": 0,
+     "term_taxonomy_id": 2269,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 0,
+     "count": 2373,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "description": "<p>After a quarter century with the U.S. Army Blues Jazz Ensemble, trumpeter Dave Detwiler now leads The White House Band, a group of musicians that have retired from military jazz bands. They&#8217;re joined by area straight-ahead vocalist and educator Darden Purcell to perform a set of standards.</p>\n",
+   "ticket_link": "",
+   "price": "",
+   "musicians_website": "",
+   "image": null,
+   "repeats": true
+  },
+  {
+   "id": 31823,
+   "event_id": 5988,
+   "name": "Walt Johnson Trio",
+   "start_date": "2026-10-11",
+   "start_date_display": "Sunday, October 11",
+   "start_time": "18:30:00",
+   "start_time_display": "6.30pm",
+   "start_time_display_short": "6:30pm",
+   "venue": {
+    "term_id": 2268,
+    "name": "LaPortas",
+    "slug": "laportas",
+    "term_group": 0,
+    "term_taxonomy_id": 2268,
+    "taxonomy": "venue",
+    "description": "",
+    "parent": 0,
+    "count": 1536,
+    "filter": "raw",
+    "term_order": "0"
+   },
+   "venue_detail": {
+    "address": "1600 Duke St, Alexandria, VA 22314, United States",
+    "geolocation": {
+     "address": "1600 Duke St, Alexandria, VA 22314, United States",
+     "lat": 38.8038401,
+     "lng": -77.05829030000001,
+     "zoom": 14,
+     "place_id": "ChIJHcHW5aqxt4kRY4Vnsef0eCY",
+     "name": "1600 Duke St",
+     "street_number": "1600",
+     "street_name": "Duke Street",
+     "street_name_short": "Duke St",
+     "city": "Alexandria",
+     "state": "Virginia",
+     "state_short": "VA",
+     "post_code": "22314",
+     "country": "United States",
+     "country_short": "US"
+    }
+   },
+   "cb_show": null,
+   "cb_pick": null,
+   "tags": [
+    {
+     "term_id": 2263,
+     "name": "All Ages",
+     "slug": "all-ages",
+     "term_group": 0,
+     "term_taxonomy_id": 2263,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 6761,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2259,
+     "name": "Drink Minimum",
+     "slug": "drink-minimum",
+     "term_group": 0,
+     "term_taxonomy_id": 2259,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 3801,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 19,
+     "name": "Full Menu",
+     "slug": "full-menu",
+     "term_group": 0,
+     "term_taxonomy_id": 19,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 9077,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "neighborhoods": [
+    {
+     "term_id": 2269,
+     "name": "Virginia",
+     "slug": "virginia",
+     "term_group": 0,
+     "term_taxonomy_id": 2269,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 0,
+     "count": 2373,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "description": "<p>Trumpeter Walt Johnson is likes to swing play his favorite standards. He plays every Sunday with a trio at LaPortas in Alexandria.</p>\n",
+   "ticket_link": null,
+   "price": "",
+   "musicians_website": null,
+   "image": null,
+   "repeats": true
+  },
+  {
+   "id": 35505,
+   "event_id": 35503,
+   "name": "Alexandria Jazz Fest &#8211; Day 1",
+   "start_date": "2026-06-12",
+   "start_date_display": "Friday, June 12",
+   "start_time": "13:00:00",
+   "start_time_display": "1pm",
+   "start_time_display_short": "1:00pm",
+   "venue": {
+    "term_id": 2650,
+    "name": "Old Waterfront Park",
+    "slug": "old-waterfront-park",
+    "term_group": 0,
+    "term_taxonomy_id": 2650,
+    "taxonomy": "venue",
+    "description": "",
+    "parent": 0,
+    "count": 5,
+    "filter": "raw",
+    "term_order": "0"
+   },
+   "venue_detail": {
+    "address": null,
+    "geolocation": null
+   },
+   "cb_show": false,
+   "cb_pick": false,
+   "tags": [
+    {
+     "term_id": 2263,
+     "name": "All Ages",
+     "slug": "all-ages",
+     "term_group": 0,
+     "term_taxonomy_id": 2263,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 6761,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2258,
+     "name": "Free",
+     "slug": "free",
+     "term_group": 0,
+     "term_taxonomy_id": 2258,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 2294,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2378,
+     "name": "Lawn Seating",
+     "slug": "lawn-seating",
+     "term_group": 0,
+     "term_taxonomy_id": 2378,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 122,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2264,
+     "name": "Outdoors",
+     "slug": "outdoors",
+     "term_group": 0,
+     "term_taxonomy_id": 2264,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 394,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "neighborhoods": [
+    {
+     "term_id": 2422,
+     "name": "Alexandria",
+     "slug": "alexandria",
+     "term_group": 0,
+     "term_taxonomy_id": 2422,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 2269,
+     "count": 239,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2269,
+     "name": "Virginia",
+     "slug": "virginia",
+     "term_group": 0,
+     "term_taxonomy_id": 2269,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 0,
+     "count": 2373,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "description": "<p>The Alexandria Jazz Festival returns for its 48th edition, bringing together some of the best artists in the area for an afternoon and evening of Black American Music. Vendors will offer food and drinks, while the festival setup will include games and art projects.</p>\n<p><strong>1 p.m. &#8211; Silver Tones &#8211; </strong>The Silver Tones is a Northern Virginia-based swing band led by trumpeter and vocalist Wendy Marie.</p>\n<p><strong>2:30 p.m. &#8211; Irish Breakfast Band &#8211; </strong>The Irish Breakfast band is a collective of DMV-based musicians who perform a repertoire of Celtic music.</p>\n<p><strong>3:45 p.m. &#8211; Decades Band &#8211; </strong>The Decades band performs a mixture of smooth jazz and R&amp;B.</p>\n<p><strong>5 p.m. &#8211; Jason Masi &#8211; </strong>Singer-songwriter Jason Masi draws influence from classic soul, blues and acoustic rock.</p>\n",
+   "ticket_link": {
+    "title": "",
+    "url": "https://www.alexandriava.gov/arts/alexandria-jazz-fest",
+    "target": "_blank"
+   },
+   "price": "Free",
+   "musicians_website": "",
+   "image": null,
+   "repeats": false
+  },
+  {
+   "id": 35508,
+   "event_id": 35507,
+   "name": "Alexandria Jazz Fest &#8211; Day 2",
+   "start_date": "2026-06-13",
+   "start_date_display": "Saturday, June 13",
+   "start_time": "12:00:00",
+   "start_time_display": "12pm",
+   "start_time_display_short": "12:00pm",
+   "venue": {
+    "term_id": 2650,
+    "name": "Old Waterfront Park",
+    "slug": "old-waterfront-park",
+    "term_group": 0,
+    "term_taxonomy_id": 2650,
+    "taxonomy": "venue",
+    "description": "",
+    "parent": 0,
+    "count": 5,
+    "filter": "raw",
+    "term_order": "0"
+   },
+   "venue_detail": {
+    "address": null,
+    "geolocation": null
+   },
+   "cb_show": false,
+   "cb_pick": false,
+   "tags": [
+    {
+     "term_id": 2263,
+     "name": "All Ages",
+     "slug": "all-ages",
+     "term_group": 0,
+     "term_taxonomy_id": 2263,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 6761,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2258,
+     "name": "Free",
+     "slug": "free",
+     "term_group": 0,
+     "term_taxonomy_id": 2258,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 2294,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2378,
+     "name": "Lawn Seating",
+     "slug": "lawn-seating",
+     "term_group": 0,
+     "term_taxonomy_id": 2378,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 122,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2264,
+     "name": "Outdoors",
+     "slug": "outdoors",
+     "term_group": 0,
+     "term_taxonomy_id": 2264,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 394,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "neighborhoods": [
+    {
+     "term_id": 2422,
+     "name": "Alexandria",
+     "slug": "alexandria",
+     "term_group": 0,
+     "term_taxonomy_id": 2422,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 2269,
+     "count": 239,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2269,
+     "name": "Virginia",
+     "slug": "virginia",
+     "term_group": 0,
+     "term_taxonomy_id": 2269,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 0,
+     "count": 2373,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "description": "<p>The Alexandria Jazz Festival returns for its 48th edition, bringing together some of the best artists in the area for an afternoon and evening of Black American Music and poetry. Vendors will offer food and drinks, while the festival setup will include games and art projects.</p>\n<p><strong>12:15 p.m. &#8211; Eric Byrd &#8211; </strong>Vocalist and pianist Eric Byrd sings in a silky croon that’s not too far from Nat “King” Cole – but with more soul and gospel influence.</p>\n<p><strong>1:30 p.m. &#8211; Alex Parchment &#8211; </strong>D.C.-based trumpeter Alex Parchment performs a blend of soul, funk, hip-hop and jazz.</p>\n<p><strong>2:45 p.m. &#8211; Improviso Jazz </strong></p>\n<p><strong>4:20 &#8211; Michael Hawkins and the Brotherhood &#8211; </strong>Bassist Michael Hawkins leads his ensemble of Richmond-based musicians through selections of straight-ahead jazz.</p>\n<p><strong>5:50 &#8211; Poetry by Prophecy Poet </strong></p>\n<p><strong>5:55 &#8211; Kayazhanna &#8211; </strong> Kayazhanna is a young singer-songwriter in the D.C. area.</p>\n<p><strong>7:25 &#8211; Alexandria Poet Laureate and ACPS Student Poetry </strong></p>\n<p><strong>7:35 &#8211; Madz Johnson &#8211; </strong>Singer-songwriter Madz Johnson pulls influence from funk, soul and jazz.</p>\n",
+   "ticket_link": {
+    "title": "",
+    "url": "https://www.alexandriava.gov/arts/alexandria-jazz-fest",
+    "target": "_blank"
+   },
+   "price": "Free",
+   "musicians_website": "",
+   "image": null,
+   "repeats": false
+  },
+  {
+   "id": 35510,
+   "event_id": 35509,
+   "name": "Alexandria Jazz Fest &#8211; Day 3",
+   "start_date": "2026-06-14",
+   "start_date_display": "Sunday, June 14",
+   "start_time": "12:00:00",
+   "start_time_display": "12pm",
+   "start_time_display_short": "12:00pm",
+   "venue": {
+    "term_id": 2650,
+    "name": "Old Waterfront Park",
+    "slug": "old-waterfront-park",
+    "term_group": 0,
+    "term_taxonomy_id": 2650,
+    "taxonomy": "venue",
+    "description": "",
+    "parent": 0,
+    "count": 5,
+    "filter": "raw",
+    "term_order": "0"
+   },
+   "venue_detail": {
+    "address": null,
+    "geolocation": null
+   },
+   "cb_show": false,
+   "cb_pick": false,
+   "tags": [
+    {
+     "term_id": 2263,
+     "name": "All Ages",
+     "slug": "all-ages",
+     "term_group": 0,
+     "term_taxonomy_id": 2263,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 6761,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2258,
+     "name": "Free",
+     "slug": "free",
+     "term_group": 0,
+     "term_taxonomy_id": 2258,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 2294,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2378,
+     "name": "Lawn Seating",
+     "slug": "lawn-seating",
+     "term_group": 0,
+     "term_taxonomy_id": 2378,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 122,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2264,
+     "name": "Outdoors",
+     "slug": "outdoors",
+     "term_group": 0,
+     "term_taxonomy_id": 2264,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 394,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "neighborhoods": [
+    {
+     "term_id": 2422,
+     "name": "Alexandria",
+     "slug": "alexandria",
+     "term_group": 0,
+     "term_taxonomy_id": 2422,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 2269,
+     "count": 239,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2269,
+     "name": "Virginia",
+     "slug": "virginia",
+     "term_group": 0,
+     "term_taxonomy_id": 2269,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 0,
+     "count": 2373,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "description": "<p>The Alexandria Jazz Festival returns for its 48th edition, bringing together some of the best artists in the area for an afternoon and evening of Black American Music. Vendors will offer food and drinks, while the festival setup will include games and art projects.</p>\n<p><strong>12:15 p.m. &#8211; Jordan Curls &#8211; </strong>Singer-songwriter Jordan Curls blends jazz, neo-soul, hip-hop and spoken word.</p>\n<p><strong>1:30 p.m. &#8211; DJ One Luv &#8211; </strong>DJ One Luv performs a wide range of Black music, including jazz, R&amp;B, Caribbean, afrobeat, house, hip-hop, Latin, rock and Motown classics. Two separate sets at 1:30 and 4:15 p.m.</p>\n<p><strong>2:45 p.m. &#8211; Orquesta Manplesa &#8211; </strong>Salsa band Orquesta Manplesa pays homage to D.C.&#8217;s Latin musical traditions, blending traditional and contemporary sounds.</p>\n<p><strong>5:10 &#8211; Future Band &#8211; </strong>The Roots-influenced FutureBandDC fuses elements of hip-hop, soul and go-go.</p>\n",
+   "ticket_link": {
+    "title": "",
+    "url": "https://www.alexandriava.gov/arts/alexandria-jazz-fest",
+    "target": "_blank"
+   },
+   "price": "Free",
+   "musicians_website": "",
+   "image": null,
+   "repeats": false
+  }
+ ],
+ "max_pages": 2
+}

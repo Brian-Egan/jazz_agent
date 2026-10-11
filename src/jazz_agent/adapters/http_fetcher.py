@@ -32,6 +32,9 @@ _HEADERS = {
     "Accept-Language": "en-US,en;q=0.9",
 }
 
+# Public so the CapitalBop client sends the same realistic User-Agent (DC section 2).
+BROWSER_USER_AGENT = _HEADERS["User-Agent"]
+
 _RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 
 

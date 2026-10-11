@@ -295,3 +295,45 @@ class RollingPlaylistEvent:
     spotify_artist_id: str | None = None
     reason: str | None = None
     detail: dict[str, object] | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class CalendarVenue:
+    """A venue term from CapitalBop's ``/calendar`` (DC section 3)."""
+
+    term_id: int
+    slug: str
+    name: str
+
+
+@dataclass(frozen=True, slots=True)
+class CalendarEvent:
+    """One CapitalBop event instance, as the feed publishes it (DC section 2).
+
+    ``instance_id`` is one date; ``event_id`` is the series shared by a residency's dates.
+    ``name`` is the raw feed name, markers and entities intact.
+    """
+
+    instance_id: int
+    event_id: int
+    name: str
+    start_date: date
+    start_time: time | None
+    venue: CalendarVenue
+    geocoded_city: str | None = None
+    neighborhoods: tuple[str, ...] = ()
+    cb_pick: bool = False
+    tags: tuple[str, ...] = ()
+    price: str = ""
+    ticket_link: str = ""
+    repeats: bool = False
+    description_html: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class CalendarArticle:
+    """The magazine post linked to an event: MCP context only, never extraction input."""
+
+    title: str
+    url: str
+    published: date | None = None

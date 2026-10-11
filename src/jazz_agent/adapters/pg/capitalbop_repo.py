@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+from datetime import date, datetime
 from typing import Any
 
 from psycopg.rows import dict_row
@@ -27,15 +29,16 @@ class PgCapitalbopRepo:
     def __init__(self, pool: ConnectionPool) -> None:
         self._pool = pool
 
-    def upsert_event(self, event: CapitalbopEvent) -> None:
+    def upsert_event(self, event: CapitalbopEvent, seen_at: datetime | None = None) -> None:
         with self._pool.connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
                 INSERT INTO capitalbop_events AS e
                     (instance_id, event_id, show_id, start_time, price_text, ticket_link,
                      cb_pick, tags, repeats, neighborhoods, geocoded_city, description_html,
-                     description_hash, article_title, article_url, article_date)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                     description_hash, article_title, article_url, article_date, last_seen_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                        COALESCE(%s, now()))
                 ON CONFLICT (instance_id) DO UPDATE SET
                     event_id = EXCLUDED.event_id, show_id = EXCLUDED.show_id,
                     start_time = EXCLUDED.start_time, price_text = EXCLUDED.price_text,
@@ -49,7 +52,7 @@ class PgCapitalbopRepo:
                     article_title = COALESCE(EXCLUDED.article_title, e.article_title),
                     article_url = COALESCE(EXCLUDED.article_url, e.article_url),
                     article_date = COALESCE(EXCLUDED.article_date, e.article_date),
-                    last_seen_at = now()
+                    last_seen_at = EXCLUDED.last_seen_at
                 """,
                 (
                     event.instance_id,
@@ -68,6 +71,7 @@ class PgCapitalbopRepo:
                     event.article_title,
                     event.article_url,
                     event.article_date,
+                    seen_at,
                 ),
             )
 
@@ -103,4 +107,39 @@ class PgCapitalbopRepo:
                 ON CONFLICT (event_id, description_hash) DO NOTHING
                 """,
                 (event_id, description_hash, Jsonb(result), model),
+            )
+
+    def known_event_ids(self, event_ids: Sequence[int]) -> set[int]:
+        with self._pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT DISTINCT event_id FROM capitalbop_events WHERE event_id = ANY(%s)",
+                (list(event_ids),),
+            )
+            return {row[0] for row in cur.fetchall()}
+
+    def cancelled_instance_ids(
+        self, start: date, end: date, fetch_started_at: datetime
+    ) -> set[int]:
+        with self._pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT e.instance_id
+                FROM capitalbop_events e JOIN shows s ON s.show_id = e.show_id
+                WHERE s.show_date BETWEEN %s AND %s AND e.last_seen_at < %s
+                """,
+                (start, end, fetch_started_at),
+            )
+            return {row[0] for row in cur.fetchall()}
+
+    def set_series_article(
+        self, event_id: int, title: str, url: str, published: date | None
+    ) -> None:
+        with self._pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE capitalbop_events
+                SET article_title = %s, article_url = %s, article_date = %s
+                WHERE event_id = %s
+                """,
+                (title, url, published, event_id),
             )
