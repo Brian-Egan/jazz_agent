@@ -293,6 +293,7 @@ class CapitalbopEvent:
     repeats: bool = False
     neighborhoods: tuple[str, ...] = ()
     geocoded_city: str | None = None
+    venue_address: str | None = None
     description_html: str | None = None
     description_hash: str | None = None
     article_title: str | None = None
@@ -344,6 +345,7 @@ class CalendarEvent:
     ticket_link: str = ""
     repeats: bool = False
     description_html: str = ""
+    venue_address: str = ""
 
 
 @dataclass(frozen=True, slots=True)

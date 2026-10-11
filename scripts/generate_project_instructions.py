@@ -25,8 +25,9 @@ DOCS_PATH = Path(__file__).resolve().parent.parent / "docs" / "claude-project-in
 BEGIN_MARKER = "<!-- BEGIN GENERATED TOOL INVENTORY -->"
 END_MARKER = "<!-- END GENERATED TOOL INVENTORY -->"
 
-# record_feedback is this server's only write tool; everything else is a read.
-_WRITE_TOOLS = {"record_feedback"}
+# The server's write tools (ADR-021, AGENTS.md invariant 7): feedback and venue-group
+# membership, nothing else. Every other tool is a read.
+_WRITE_TOOLS = {"record_feedback", "add_venue_to_group", "deactivate_venue"}
 
 
 def _signature(name: str, schema: dict[str, Any]) -> str:

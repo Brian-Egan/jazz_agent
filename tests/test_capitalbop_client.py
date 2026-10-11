@@ -75,6 +75,7 @@ def test_event_fields_are_parsed() -> None:
     assert ragsdale.start_time == time(11, 30)
     assert ragsdale.venue.slug == "laportas"
     assert ragsdale.geocoded_city == "Alexandria"
+    assert "Alexandria" in ragsdale.venue_address  # venue_detail.address, for when_is_playing
     assert ragsdale.neighborhoods == ("virginia",)
     assert "all-ages" in ragsdale.tags and ragsdale.repeats and not ragsdale.cb_pick
     assert "Guitarist Steve Ragsdale" in ragsdale.description_html

@@ -154,6 +154,7 @@ def _parse_event(raw: dict[str, Any]) -> CalendarEvent:
         ticket_link=str(raw.get("ticket_link") or ""),
         repeats=bool(raw.get("repeats")),
         description_html=str(raw.get("description") or ""),
+        venue_address=str(detail.get("address") or geolocation.get("address") or ""),
     )
 
 

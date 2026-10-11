@@ -77,7 +77,7 @@ def test_mcp_module_never_imports_write_capable_repo_adapters_other_than_feedbac
     (get_run_health only calls recent_runs), but even so it's excluded from
     write capability by never being asked to write; this test just proves the
     only *_repo.py import outside PgFeedbackRepo is the read-only run repo."""
-    allowed_repo_imports = {"feedback_repo", "run_repo"}
+    allowed_repo_imports = {"feedback_repo", "run_repo", "venue_group_repo"}
     offenders = {}
     for path in MCP_DIR.rglob("*.py"):
         tree = ast.parse(path.read_text(), filename=str(path))
@@ -93,3 +93,41 @@ def test_mcp_module_never_imports_write_capable_repo_adapters_other_than_feedbac
                     offenders.setdefault(path.name, []).append(node.module)
 
     assert not offenders, f"mcp/ imports a write-capable repo beyond feedback/run: {offenders}"
+
+
+# --- ADR-021: the one widening (issue #31) ---------------------------------------------------
+
+# Every repository method the mcp/ package may call. Anything else is a new capability and has
+# to be argued for in an ADR, not slipped in.
+_ALLOWED_REPO_CALLS = {
+    "record_feedback",  # feedback
+    "recent_runs",  # read-only
+    "add_member",  # venue_group_members
+    "deactivate_member",  # venue_group_members (stamps, never deletes)
+    "active_members",  # read-only
+}
+_REPO_CALL_PATTERN = re.compile(r"\b(?:repo|Pg\w+Repo\([^)]*\))\.(\w+)\(")
+
+
+def test_mcp_only_calls_the_allowed_repository_methods() -> None:
+    called = set()
+    for path in MCP_DIR.rglob("*.py"):
+        called |= set(_REPO_CALL_PATTERN.findall(path.read_text()))
+
+    assert called <= _ALLOWED_REPO_CALLS, f"unexpected repository calls from mcp/: {called}"
+    assert {"record_feedback", "add_member", "deactivate_member"} <= called
+
+
+def test_the_mcp_package_has_no_way_to_create_a_playlist_or_touch_stints() -> None:
+    forbidden = (
+        "upsert_rolling_playlist",
+        "link_spotify_playlist",
+        "open_stint",
+        "close_stint",
+        "create_playlist",
+        "replace_playlist_items",
+    )
+    for path in MCP_DIR.rglob("*.py"):
+        text = path.read_text()
+        for name in forbidden:
+            assert name not in text, (path.name, name)

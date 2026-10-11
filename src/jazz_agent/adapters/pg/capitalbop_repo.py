@@ -14,7 +14,7 @@ from jazz_agent.core.models import CapitalbopEvent, StoredEvent
 
 _COLUMNS = (
     "instance_id, event_id, show_id, start_time, price_text, ticket_link, cb_pick, tags, "
-    "repeats, neighborhoods, geocoded_city, description_html, description_hash, "
+    "repeats, neighborhoods, geocoded_city, venue_address, description_html, description_hash, "
     "article_title, article_url, article_date, first_seen_at, last_seen_at"
 )
 
@@ -37,9 +37,10 @@ class PgCapitalbopRepo:
                 """
                 INSERT INTO capitalbop_events AS e
                     (instance_id, event_id, show_id, start_time, price_text, ticket_link,
-                     cb_pick, tags, repeats, neighborhoods, geocoded_city, description_html,
-                     description_hash, article_title, article_url, article_date, last_seen_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                     cb_pick, tags, repeats, neighborhoods, geocoded_city, venue_address,
+                     description_html, description_hash, article_title, article_url,
+                     article_date, last_seen_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                         COALESCE(%s, now()))
                 ON CONFLICT (instance_id) DO UPDATE SET
                     event_id = EXCLUDED.event_id, show_id = EXCLUDED.show_id,
@@ -48,6 +49,7 @@ class PgCapitalbopRepo:
                     tags = EXCLUDED.tags, repeats = EXCLUDED.repeats,
                     neighborhoods = EXCLUDED.neighborhoods,
                     geocoded_city = EXCLUDED.geocoded_city,
+                    venue_address = EXCLUDED.venue_address,
                     description_html = EXCLUDED.description_html,
                     description_hash = EXCLUDED.description_hash,
                     -- A re-fetch that carries no article must not erase one already captured.
@@ -68,6 +70,7 @@ class PgCapitalbopRepo:
                     event.repeats,
                     list(event.neighborhoods),
                     event.geocoded_city,
+                    event.venue_address,
                     event.description_html,
                     event.description_hash,
                     event.article_title,
