@@ -33,9 +33,9 @@ from jazz_agent.core.selection import order_tracks, select_album, select_tracks
 from jazz_agent.core.weeks import dc_window
 from jazz_agent.pipeline.dc_extract import ExtractMatchResult, extract_and_match
 from jazz_agent.pipeline.dc_mirror import MirrorResult, mirror_calendar
+from jazz_agent.pipeline.detect_removals import make_removal_detector
 from jazz_agent.pipeline.reconcile_rolling import (
     DesiredTrack,
-    RemovalDetector,
     RollingOutcome,
     reconcile_rolling,
 )
@@ -43,6 +43,7 @@ from jazz_agent.ports.calendar import CalendarSource
 from jazz_agent.ports.extractor import Extractor
 from jazz_agent.ports.graph import GraphService
 from jazz_agent.ports.music import MusicService
+from jazz_agent.ports.notifier import Notifier
 from jazz_agent.ports.repository import (
     ArtistRepo,
     CapitalbopRepo,
@@ -69,8 +70,6 @@ class DcDependencies:
     group_repo: VenueGroupRepo
     feedback_repo: FeedbackRepo
     novelty_liked_days: int
-    # DC section 11 (#29): runs first on each playlist that already exists in Spotify.
-    detect_user_removals: RemovalDetector | None = None
 
 
 @dataclass
@@ -94,6 +93,7 @@ def run_dc(
     adjudication_model: str,
     music: MusicService,
     rolling_repo: RollingPlaylistRepo,
+    notifier: Notifier,
     today: date,
     now: datetime,
 ) -> DcRunResult:
@@ -136,6 +136,10 @@ def run_dc(
     feedback = dc.feedback_repo.novelty_entries()
     excluded_artists = excluded_artist_ids(feedback, now, dc.novelty_liked_days)
     excluded_tracks = excluded_track_ids(feedback)
+
+    detector = make_removal_detector(
+        music, rolling_repo, dc.feedback_repo, show_repo, notifier, now
+    )
 
     # Phase 1: what every playlist wants, so phase 2 can tell a slot move from a departure.
     rows: dict[str, RollingPlaylist] = {}
@@ -180,7 +184,7 @@ def run_dc(
                 music,
                 rolling_repo,
                 now,
-                dc.detect_user_removals,
+                detector,
             )
         except Exception as e:
             logger.exception("DC playlist %s failed", definition.slot_key)

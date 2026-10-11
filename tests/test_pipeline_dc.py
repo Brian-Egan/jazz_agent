@@ -46,6 +46,8 @@ RUN2 = RUN1 + timedelta(days=1)
 
 BLUES_ALLEY = CalendarVenue(1, "blues-alley", "Blues Alley")
 RHIZOME = CalendarVenue(2, "rhizome", "Rhizome")
+LAPORTAS = CalendarVenue(3, "laportas", "LaPortas")
+BIRCHMERE = CalendarVenue(4, "the-birchmere", "The Birchmere")
 
 
 def _seed(db: ConnectionPool) -> None:
@@ -90,7 +92,7 @@ class StubCalendar:
         self.fail = False
 
     def venues(self) -> list[CalendarVenue]:
-        return [BLUES_ALLEY, RHIZOME]
+        return [BLUES_ALLEY, RHIZOME, LAPORTAS, BIRCHMERE]
 
     def events(self, start: date, end: date) -> list[CalendarEvent]:
         if self.fail:
@@ -117,6 +119,7 @@ class FakeSpotify:
         self.fail_replace_once = False
         self.fail_create_titled: str | None = None
         self.last_artist_query = ""
+        self.isrc_overrides: dict[str, str] = {}
         self.track_searches: list[str] = []
 
     @property
@@ -171,7 +174,12 @@ class FakeSpotify:
 
     def get_playlist_items(self, spotify_playlist_id: str) -> list[dict[str, Any]]:
         return [
-            {"id": t, "isrc": None, "name": t} for t in self.playlists[spotify_playlist_id]["items"]
+            {
+                "id": t,
+                "isrc": self.isrc_overrides.get(t, f"ISRC-{t.replace('-t', '-')}"),
+                "name": t,
+            }
+            for t in self.playlists[spotify_playlist_id]["items"]
         ]
 
     def replace_playlist_items(
@@ -258,6 +266,7 @@ class World:
     calendar: StubCalendar
     music: FakeSpotify = field(default_factory=FakeSpotify)
     extractor: FakeExtractor = field(default_factory=FakeExtractor)
+    notifier: _Notifier = field(default_factory=lambda: _Notifier())
 
     def dc_deps(self, **overrides: Any) -> DcDependencies:
         return DcDependencies(
@@ -283,6 +292,7 @@ class World:
             "claude-haiku-4-5",
             self.music,  # type: ignore[arg-type]
             PgRollingPlaylistRepo(self.db),
+            self.notifier,
             today,
             now,
         )
@@ -299,7 +309,7 @@ class World:
             extractor=self.extractor,  # type: ignore[arg-type]
             music=self.music,  # type: ignore[arg-type]
             graph=FakeGraph(),  # type: ignore[arg-type]
-            notifier=_Notifier(),  # type: ignore[arg-type]
+            notifier=self.notifier,
             llm_client=FakeAdjudicator(self.music),  # type: ignore[arg-type]
             extraction_model="claude-haiku-4-5",
             adjudication_model="claude-haiku-4-5",
@@ -309,8 +319,11 @@ class World:
 
 
 class _Notifier:
+    def __init__(self) -> None:
+        self.alerts: list[str] = []
+
     def alert(self, msg: str) -> None:
-        pass
+        self.alerts.append(msg)
 
 
 def standard_feed() -> list[CalendarEvent]:
@@ -686,3 +699,202 @@ def test_overlapping_runs_are_refused_by_the_lock(world: World) -> None:
         assert (first, second) == (True, False)
     with lock.hold("jazz_agent.dc") as again:
         assert again is True  # released on exit
+
+
+# --- user removals from AlxJazz (DC section 11, issue #29) ---------------------------------------
+
+
+def with_alx_shows(world: World) -> None:
+    world.calendar.event_list += [
+        ev(10, 110, "Esther Haynes", date(2026, 10, 21), venue=LAPORTAS, hour=18, pick=False),
+        ev(11, 111, "Birch Artist", date(2026, 10, 22), venue=BIRCHMERE, pick=False),
+    ]
+
+
+def spotify_items(world: World, slot_key: str) -> list[str]:
+    return world.music.playlists[_pid(world, slot_key)]["items"]  # type: ignore[no-any-return]
+
+
+def user_closures(world: World) -> list[tuple[Any, ...]]:
+    with world.db.connection() as conn:
+        return conn.execute(
+            "SELECT spotify_track_id FROM rolling_playlist_tracks "
+            "WHERE removal_reason = 'user' ORDER BY id"
+        ).fetchall()
+
+
+def spotify_feedback(world: World) -> list[tuple[Any, ...]]:
+    with world.db.connection() as conn:
+        return conn.execute(
+            "SELECT target_type, target_id, sentiment, source, show_id IS NOT NULL, "
+            "rolling_playlist_id IS NOT NULL FROM feedback ORDER BY id"
+        ).fetchall()
+
+
+ESTHER = "id-esther-haynes"
+BIRCH = "id-birch-artist"
+
+
+def test_a_removed_laportas_track_is_closed_once_and_recorded_as_one_dislike(
+    world: World,
+) -> None:
+    with_alx_shows(world)
+    world.run(RUN1)
+    assert held(world, "alxjazz") == [f"{ESTHER}-t1", f"{ESTHER}-t2", f"{BIRCH}-t1", f"{BIRCH}-t2"]
+    spotify_items(world, "alxjazz").remove(f"{ESTHER}-t1")  # Brian deletes it in the app
+
+    world.run(RUN2)
+    world.run(RUN2 + timedelta(days=1))  # idempotency: a third run adds nothing
+
+    assert user_closures(world) == [(f"{ESTHER}-t1",)]
+    assert spotify_feedback(world) == [("track", f"{ESTHER}-t1", "disliked", "spotify", True, True)]
+    assert f"{ESTHER}-t1" not in held(world, "alxjazz")
+    assert spotify_items(world, "alxjazz") == held(world, "alxjazz")  # nothing put back
+    assert len(held(world, "alxjazz")) == 3  # no replacement track was chosen
+
+
+def test_removing_both_of_an_artists_laportas_tracks_writes_one_artist_dislike(
+    world: World,
+) -> None:
+    with_alx_shows(world)
+    world.run(RUN1)
+    for track in (f"{ESTHER}-t1", f"{ESTHER}-t2"):
+        spotify_items(world, "alxjazz").remove(track)
+
+    world.run(RUN2)
+    world.run(RUN2 + timedelta(days=1))
+
+    assert [f[:2] for f in spotify_feedback(world)] == [
+        ("track", f"{ESTHER}-t1"),
+        ("track", f"{ESTHER}-t2"),
+        ("artist", ESTHER),
+    ]
+    # Novelty honours the artist dislike, and booking her again does not bring her back.
+    world.calendar.event_list.append(
+        ev(12, 112, "Esther Haynes", date(2026, 10, 28), venue=LAPORTAS, hour=18, pick=False)
+    )
+    world.run(RUN2 + timedelta(days=2))
+    assert not any(t.startswith(ESTHER) for t in held(world, "alxjazz"))
+    assert len(user_closures(world)) == 2
+
+
+def test_a_removed_birchmere_track_stays_removed_and_writes_no_feedback(world: World) -> None:
+    with_alx_shows(world)
+    world.run(RUN1)
+    spotify_items(world, "alxjazz").remove(f"{BIRCH}-t1")
+
+    world.run(RUN2)
+    world.run(RUN2 + timedelta(days=1))
+
+    assert user_closures(world) == [(f"{BIRCH}-t1",)]
+    assert spotify_feedback(world) == []
+    assert f"{BIRCH}-t1" not in held(world, "alxjazz")
+
+
+def test_a_removed_track_is_not_re_added_even_after_the_artist_is_booked_again(
+    world: World,
+) -> None:
+    with_alx_shows(world)
+    world.run(RUN1)
+    spotify_items(world, "alxjazz").remove(f"{BIRCH}-t1")
+    world.run(RUN2)
+    world.calendar.event_list.append(
+        ev(13, 111, "Birch Artist", date(2026, 11, 5), venue=BIRCHMERE)
+    )  # a later date of the same series
+
+    world.run(RUN2 + timedelta(days=1))
+
+    assert f"{BIRCH}-t1" not in held(world, "alxjazz")
+    assert f"{BIRCH}-t2" in held(world, "alxjazz")
+    assert len(user_closures(world)) == 1
+
+
+def test_a_failed_page_read_records_nothing(world: World) -> None:
+    with_alx_shows(world)
+    world.run(RUN1)
+    spotify_items(world, "alxjazz").remove(f"{ESTHER}-t1")
+    real = world.music.get_playlist_items
+
+    def broken(_: str) -> list[dict[str, Any]]:
+        raise RuntimeError("page 2 returned 502")
+
+    world.music.get_playlist_items = broken  # type: ignore[method-assign]
+    world.run(RUN2)
+
+    assert user_closures(world) == [] and spotify_feedback(world) == []
+    world.music.get_playlist_items = real  # type: ignore[method-assign]
+    world.run(RUN2 + timedelta(days=1))
+    assert user_closures(world) == [(f"{ESTHER}-t1",)]  # caught once the read works
+
+
+def test_a_relinked_track_with_the_same_isrc_is_not_a_removal(world: World) -> None:
+    with_alx_shows(world)
+    world.run(RUN1)
+    items = spotify_items(world, "alxjazz")
+    items[items.index(f"{ESTHER}-t1")] = "relinked-id"  # same recording, new track id
+    world.music.isrc_overrides = {"relinked-id": f"ISRC-{ESTHER}-1"}
+
+    world.run(RUN2)
+
+    assert user_closures(world) == [] and spotify_feedback(world) == []
+    assert len(held(world, "alxjazz")) == 4
+
+
+def test_a_mass_disappearance_records_nothing_and_alerts(world: World) -> None:
+    with_alx_shows(world)
+    world.run(RUN1)
+    spotify_items(world, "alxjazz").clear()
+
+    world.run(RUN2)
+
+    assert user_closures(world) == [] and spotify_feedback(world) == []
+    assert len(held(world, "alxjazz")) == 4  # stints stay open
+    assert len(world.notifier.alerts) == 1
+
+
+def test_removals_are_not_inferred_while_the_playlist_write_is_pending(world: World) -> None:
+    with_alx_shows(world)
+    world.run(RUN1)
+    spotify_items(world, "alxjazz").remove(f"{ESTHER}-t1")
+    PgRollingPlaylistRepo(world.db).set_sync_pending(_playlist_row_id(world, "alxjazz"), True)
+
+    world.run(RUN2)
+
+    assert user_closures(world) == []
+    assert f"{ESTHER}-t1" in spotify_items(world, "alxjazz")  # the full list was re-sent
+
+
+def _playlist_row_id(world: World, slot_key: str) -> int:
+    with world.db.connection() as conn:
+        row = conn.execute(
+            "SELECT id FROM rolling_playlists WHERE slot_key = %s", (slot_key,)
+        ).fetchone()
+    assert row is not None
+    return int(row[0])
+
+
+def test_removals_from_the_other_playlists_are_not_inferred(world: World) -> None:
+    world.run(RUN1)
+    spotify_items(world, "blues-alley").pop(0)
+    spotify_items(world, "next-2-weeks").pop(0)
+
+    world.run(RUN2)
+
+    assert user_closures(world) == [] and spotify_feedback(world) == []
+
+
+def test_dry_run_records_no_removal_and_no_feedback(world: World) -> None:
+    with_alx_shows(world)
+    world.run(RUN1)
+    spotify_items(world, "alxjazz").remove(f"{ESTHER}-t1")
+
+    run_daily(
+        world.daily_deps(),
+        today=TODAY,
+        horizon_weeks_ahead=4,
+        retain_weeks_past=1,
+        dry_run=True,
+        now=RUN2,
+    )
+
+    assert user_closures(world) == [] and spotify_feedback(world) == []
