@@ -15,3 +15,7 @@ Real responses from `https://www.capitalbop.com/wp-json/capitalbop/v1`, saved 20
   Alexandria Jazz Fest (June 2026, pulled from a separate one-off window).
 - `event_with_article.json` – `/event?instance=37233`; `article.post_content` and
   `article.acf` emptied (large, and not used: DC section 2 stores only title, URL, date).
+- `eligibility_snapshot.json` – every event of the live 2026-10-11..2026-11-15 window (349),
+  reduced to the fields DC section 5 reads (values copied unmodified from `/events`), for the
+  eligibility count test. DC section 5's own counts were measured on 2026-10-10; that snapshot
+  is not recoverable, see `tests/test_dc_eligibility.py`.
