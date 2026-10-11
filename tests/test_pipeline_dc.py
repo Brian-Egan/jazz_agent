@@ -10,7 +10,7 @@ import logging
 import os
 import subprocess
 from collections.abc import Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 from typing import Any
@@ -321,9 +321,14 @@ class World:
 class _Notifier:
     def __init__(self) -> None:
         self.alerts: list[str] = []
+        self.pushes: list[tuple[str, str | None, tuple[str, ...]]] = []
+        self.raise_error = False
 
-    def alert(self, msg: str) -> None:
+    def alert(self, msg: str, title: str | None = None, tags: Sequence[str] = ()) -> None:
+        if self.raise_error:
+            raise RuntimeError("ntfy is down")
         self.alerts.append(msg)
+        self.pushes.append((msg, title, tuple(tags)))
 
 
 def standard_feed() -> list[CalendarEvent]:
@@ -898,3 +903,131 @@ def test_dry_run_records_no_removal_and_no_feedback(world: World) -> None:
     )
 
     assert user_closures(world) == [] and spotify_feedback(world) == []
+
+
+# --- new-artist push (DC section 12, issue #30) ----------------------------------------------
+
+
+def laportas(n: int, name: str, day: date, hour: int = 18, minute: int = 30) -> CalendarEvent:
+    event = ev(200 + n, 200 + n, name, day, venue=LAPORTAS, hour=hour, pick=False)
+    return replace(event, start_time=time(hour, minute))
+
+
+def test_the_seeding_run_sends_nothing(world: World) -> None:
+    world.calendar.event_list.append(laportas(1, "Esther Haynes", date(2026, 10, 21)))
+
+    world.run(RUN1)
+
+    assert world.notifier.pushes == []
+
+
+def test_two_new_artists_in_one_run_produce_one_push_naming_both(world: World) -> None:
+    world.calendar.event_list.append(
+        ev(11, 111, "Birch Artist", date(2026, 10, 22), venue=BIRCHMERE, pick=False)
+    )
+    world.run(RUN1)  # seeds AlxJazz
+    world.calendar.event_list += [
+        laportas(1, "Esther Haynes", date(2026, 10, 21)),
+        laportas(2, "Kai Newman", date(2026, 10, 14), hour=19, minute=0),
+    ]
+
+    world.run(RUN2)
+
+    assert len(world.notifier.pushes) == 1
+    body, title, tags = world.notifier.pushes[0]
+    assert title == "AlxJazz \u00b7 new at LaPortas" and tags == ("new-artist",)
+    assert body.splitlines() == [
+        "Kai Newman \u2014 Wed 10/14, 7:00pm",
+        "Esther Haynes \u2014 Wed 10/21, 6:30pm",
+    ]
+
+
+def test_an_artist_already_announced_does_not_push_again(world: World) -> None:
+    world.calendar.event_list.append(
+        ev(11, 111, "Birch Artist", date(2026, 10, 22), venue=BIRCHMERE, pick=False)
+    )
+    world.run(RUN1)
+    world.calendar.event_list.append(laportas(1, "Esther Haynes", date(2026, 10, 21)))
+    world.run(RUN2)
+    world.run(RUN2 + timedelta(days=1))
+
+    assert len(world.notifier.pushes) == 1
+
+
+def test_a_returning_artist_with_a_closed_stint_does_not_push(world: World) -> None:
+    world.calendar.event_list.append(
+        ev(11, 111, "Birch Artist", date(2026, 10, 22), venue=BIRCHMERE, pick=False)
+    )
+    esther = laportas(1, "Esther Haynes", date(2026, 10, 21))
+    world.calendar.event_list.append(esther)
+    world.run(RUN1)
+    world.calendar.event_list.remove(esther)
+    world.run(RUN2)  # her stints close
+    world.notifier.pushes.clear()
+    world.calendar.event_list.append(esther)
+
+    world.run(RUN2 + timedelta(days=1))
+
+    assert len(held(world, "alxjazz")) == 4  # she is back on the playlist
+    assert world.notifier.pushes == []
+
+
+def test_an_artist_excluded_by_novelty_never_pushes(world: World) -> None:
+    world.calendar.event_list.append(
+        ev(11, 111, "Birch Artist", date(2026, 10, 22), venue=BIRCHMERE, pick=False)
+    )
+    world.run(RUN1)
+    PgFeedbackRepo(world.db).record_feedback(
+        Feedback(target_type="artist", target_id="id-esther-haynes", sentiment="disliked")
+    )
+    world.calendar.event_list.append(laportas(1, "Esther Haynes", date(2026, 10, 21)))
+
+    world.run(RUN2)
+
+    assert world.notifier.pushes == []
+    assert not any(t.startswith("id-esther") for t in held(world, "alxjazz"))
+
+
+def test_a_raising_notifier_leaves_the_runs_outcome_unchanged(world: World) -> None:
+    world.calendar.event_list.append(
+        ev(11, 111, "Birch Artist", date(2026, 10, 22), venue=BIRCHMERE, pick=False)
+    )
+    world.run(RUN1)
+    world.calendar.event_list.append(laportas(1, "Esther Haynes", date(2026, 10, 21)))
+    world.notifier.raise_error = True
+
+    result = world.run(RUN2)
+
+    assert result.outcome == "success"
+    assert len(held(world, "alxjazz")) == 4
+
+
+def test_a_birchmere_artist_new_to_alxjazz_does_not_push(world: World) -> None:
+    world.calendar.event_list.append(laportas(1, "Esther Haynes", date(2026, 10, 21)))
+    world.run(RUN1)
+    world.calendar.event_list.append(
+        ev(11, 111, "Birch Artist", date(2026, 10, 22), venue=BIRCHMERE, pick=False)
+    )
+
+    world.run(RUN2)
+
+    assert world.notifier.pushes == []
+
+
+def test_dry_run_sends_no_push(world: World) -> None:
+    world.calendar.event_list.append(
+        ev(11, 111, "Birch Artist", date(2026, 10, 22), venue=BIRCHMERE, pick=False)
+    )
+    world.run(RUN1)
+    world.calendar.event_list.append(laportas(1, "Esther Haynes", date(2026, 10, 21)))
+
+    run_daily(
+        world.daily_deps(),
+        today=TODAY,
+        horizon_weeks_ahead=4,
+        retain_weeks_past=1,
+        dry_run=True,
+        now=RUN2,
+    )
+
+    assert world.notifier.pushes == []

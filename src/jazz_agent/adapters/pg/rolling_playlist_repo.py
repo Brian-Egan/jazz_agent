@@ -104,6 +104,15 @@ class PgRollingPlaylistRepo:
             )
             return [RollingPlaylistTrack(**row) for row in cur.fetchall()]
 
+    def stinted_artist_ids(self, rolling_playlist_id: int) -> set[str]:
+        with self._pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT DISTINCT spotify_artist_id FROM rolling_playlist_tracks "
+                "WHERE rolling_playlist_id = %s",
+                (rolling_playlist_id,),
+            )
+            return {row[0] for row in cur.fetchall()}
+
     def open_stint(self, track: RollingPlaylistTrack) -> int:
         # The partial unique index rejects a second open stint for the same track and
         # playlist; that error is deliberately not swallowed.

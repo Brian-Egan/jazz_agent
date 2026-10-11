@@ -20,6 +20,7 @@ import anthropic
 from jazz_agent.core import dc_groups
 from jazz_agent.core.dc_description import DescriptionEntry, build_description
 from jazz_agent.core.dc_geo import resolve_city
+from jazz_agent.core.dc_notify import TAGS, TITLE, NewArtist, format_message
 from jazz_agent.core.eligibility import (
     DcEvent,
     Membership,
@@ -59,6 +60,7 @@ logger = logging.getLogger(__name__)
 # The feed's own clubs row: run_log and chronic failure key on it (DC section 14).
 FEED_CLUB_ID = "capitalbop"
 FEED_CLUB_NAME = "CapitalBop"
+LAPORTAS_CLUB_ID = "cb-laportas"
 
 
 @dataclass
@@ -173,6 +175,14 @@ def run_dc(
         if definition.slot_key not in desired_by_slot:
             continue
         tracks, entries = desired_by_slot[definition.slot_key]
+        row = rows[definition.slot_key]
+        # Before reconcile writes stints: who has ever been on AlxJazz (DC section 12).
+        had_stints = (
+            rolling_repo.stinted_artist_ids(row.id or 0)
+            if definition.group_key == "alxjazz"
+            else set()
+        )
+        reconciled = False
         try:
             outcome = reconcile_rolling(
                 definition,
@@ -186,11 +196,14 @@ def run_dc(
                 now,
                 detector,
             )
+            reconciled = True
         except Exception as e:
             logger.exception("DC playlist %s failed", definition.slot_key)
             outcome = RollingOutcome(definition.slot_key, "partial", detail=f"failed: {e}")
         result.playlists.append(outcome)
         result.planned[definition.slot_key] = [t.track_name or t.spotify_track_id for t in tracks]
+        if definition.group_key == "alxjazz" and reconciled:
+            _notify_new_laportas(tracks, had_stints, by_instance, artist_repo, notifier)
 
     failed = [p for p in result.playlists if p.status == "partial"]
     if failed or matched.failures:
@@ -374,3 +387,37 @@ def _desired_for(
         if contributed:
             entries.append(DescriptionEntry(act.act_name, act.earliest, first.venue_name))
     return tracks, entries
+
+
+def _notify_new_laportas(
+    tracks: list[DesiredTrack],
+    had_stints: set[str],
+    by_instance: dict[int, StoredEvent],
+    artist_repo: ArtistRepo,
+    notifier: Notifier,
+) -> None:
+    """One push per run naming every artist new to AlxJazz from a LaPortas show (DC section
+    12, ADR-023). Silent on the seeding run (the playlist never held anything), and ``tracks``
+    is already post-novelty, so a rated resident never pushes. A push failure is logged and
+    never fails the run."""
+    if not had_stints:
+        return
+    by_show = {s.event.show_id: s for s in by_instance.values()}
+    new: dict[str, NewArtist] = {}
+    for track in tracks:
+        artist_id = track.spotify_artist_id
+        stored = by_show.get(track.show_id) if track.show_id is not None else None
+        if artist_id in had_stints or artist_id in new or stored is None:
+            continue
+        if stored.club_id != LAPORTAS_CLUB_ID:
+            continue
+        artist = artist_repo.get_artist(artist_id)
+        if artist is None:
+            continue
+        new[artist_id] = NewArtist(artist.name, stored.show_date, stored.event.start_time)
+    if not new:
+        return
+    try:
+        notifier.alert(format_message(list(new.values())), title=TITLE, tags=TAGS)
+    except Exception:
+        logger.exception("new-artist ntfy push failed")
