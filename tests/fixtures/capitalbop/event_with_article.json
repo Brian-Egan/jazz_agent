@@ -1,0 +1,183 @@
+{
+ "event": {
+  "id": 37233,
+  "event_id": 37232,
+  "name": "Allyn Johnson Organ Trio",
+  "start_date": "2026-10-19",
+  "start_date_display": "Monday, October 19",
+  "start_time": "19:00:00",
+  "start_time_display": "7pm",
+  "start_time_display_short": "7:00pm",
+  "venue": {
+   "term_id": 2291,
+   "name": "Blues Alley",
+   "slug": "blues-alley",
+   "term_group": 0,
+   "term_taxonomy_id": 2291,
+   "taxonomy": "venue",
+   "description": "",
+   "parent": 0,
+   "count": 954,
+   "filter": "raw",
+   "term_order": "0"
+  },
+  "venue_detail": {
+   "address": "1073 Wisconsin Ave NW, Washington, DC 20007",
+   "geolocation": {
+    "address": "1073 Wisconsin Ave NW, Washington, DC 20007, USA",
+    "lat": 38.9046891,
+    "lng": -77.06255809999999,
+    "zoom": 14,
+    "place_id": "ChIJF-m8V0m2t4kRzIqB6avGTqQ",
+    "name": "1073 Wisconsin Ave NW",
+    "street_number": "1073",
+    "street_name": "Wisconsin Avenue Northwest",
+    "street_name_short": "Wisconsin Ave NW",
+    "city": "Washington",
+    "state": "District of Columbia",
+    "state_short": "DC",
+    "post_code": "20007",
+    "country": "United States",
+    "country_short": "US"
+   }
+  },
+  "cb_show": false,
+  "cb_pick": true,
+  "tags": [
+   {
+    "term_id": 2263,
+    "name": "All Ages",
+    "slug": "all-ages",
+    "term_group": 0,
+    "term_taxonomy_id": 2263,
+    "taxonomy": "tag",
+    "description": "",
+    "parent": 0,
+    "count": 6761,
+    "filter": "raw",
+    "term_order": "0"
+   },
+   {
+    "term_id": 20,
+    "name": "CB Pick",
+    "slug": "cb-pick",
+    "term_group": 0,
+    "term_taxonomy_id": 20,
+    "taxonomy": "tag",
+    "description": "",
+    "parent": 0,
+    "count": 3456,
+    "filter": "raw",
+    "term_order": "0"
+   },
+   {
+    "term_id": 2259,
+    "name": "Drink Minimum",
+    "slug": "drink-minimum",
+    "term_group": 0,
+    "term_taxonomy_id": 2259,
+    "taxonomy": "tag",
+    "description": "",
+    "parent": 0,
+    "count": 3801,
+    "filter": "raw",
+    "term_order": "0"
+   },
+   {
+    "term_id": 19,
+    "name": "Full Menu",
+    "slug": "full-menu",
+    "term_group": 0,
+    "term_taxonomy_id": 19,
+    "taxonomy": "tag",
+    "description": "",
+    "parent": 0,
+    "count": 9077,
+    "filter": "raw",
+    "term_order": "0"
+   }
+  ],
+  "neighborhoods": [
+   {
+    "term_id": 2418,
+    "name": "District of Columbia",
+    "slug": "dc",
+    "term_group": 0,
+    "term_taxonomy_id": 2418,
+    "taxonomy": "neighborhood",
+    "description": "",
+    "parent": 0,
+    "count": 6411,
+    "filter": "raw",
+    "term_order": "0"
+   },
+   {
+    "term_id": 2272,
+    "name": "Georgetown/Dupont Circle",
+    "slug": "georgetown-dupont-circle",
+    "term_group": 0,
+    "term_taxonomy_id": 2272,
+    "taxonomy": "neighborhood",
+    "description": "",
+    "parent": 2419,
+    "count": 1766,
+    "filter": "raw",
+    "term_order": "0"
+   },
+   {
+    "term_id": 2419,
+    "name": "Northwest",
+    "slug": "northwest",
+    "term_group": 0,
+    "term_taxonomy_id": 2419,
+    "taxonomy": "neighborhood",
+    "description": "",
+    "parent": 2418,
+    "count": 5090,
+    "filter": "raw",
+    "term_order": "0"
+   }
+  ],
+  "description": "<p>Pianist Allyn Johnson, the “Dean of D.C. Jazz,” and head of the jazz program at UDC is a figurehead in the local jazz scene. He is lion-like on the ivories, punching out colorful, complex chords and harmonies that spread constantly through the music.</p>\n<p>Here he performs on the organ, alongside Tedd Baker on saxophone and Eric Kennedy on drums.</p>\n<p>Two separate sets at 7 and 9:30 p.m.</p>\n",
+  "ticket_link": {
+   "title": "",
+   "url": "https://www.instantseats.com/index.cfm?fuseaction=home.venue&venueid=3",
+   "target": "_blank"
+  },
+  "price": "$25 (Plus $15 Minimum and $7 Fees)",
+  "musicians_website": {
+   "title": "artist's instagram",
+   "url": "https://www.instagram.com/allynjohnson88/?hl=en",
+   "target": "_blank"
+  },
+  "image": "<img width=\"203\" height=\"135\" src=\"https://www.capitalbop.com/app/uploads/2025/04/allyn-johnson-025.jpg\" class=\"attachment-meganav-sm size-meganav-sm\" alt=\"\" decoding=\"async\" srcset=\"https://www.capitalbop.com/app/uploads/2025/04/allyn-johnson-025.jpg 600w, https://www.capitalbop.com/app/uploads/2025/04/allyn-johnson-025-300x200.jpg 300w\" sizes=\"(max-width: 203px) 100vw, 203px\" />",
+  "repeats": false
+ },
+ "article": {
+  "ID": 5678,
+  "post_author": "1",
+  "post_date": "2024-12-19 22:17:03",
+  "post_date_gmt": "2024-12-19 22:17:03",
+  "post_content": "",
+  "post_title": "The top 5 D.C. jazz albums of 2024",
+  "post_excerpt": "",
+  "post_status": "publish",
+  "comment_status": "open",
+  "ping_status": "open",
+  "post_password": "",
+  "post_name": "best-washington-dc-jazz-2024",
+  "to_ping": "",
+  "pinged": "",
+  "post_modified": "2024-12-19 22:17:03",
+  "post_modified_gmt": "2024-12-19 22:17:03",
+  "post_content_filtered": "",
+  "post_parent": 0,
+  "guid": "https://www.capitalbop.com/best-washington-dc-jazz-2024/",
+  "menu_order": 0,
+  "post_type": "post",
+  "post_mime_type": "",
+  "comment_count": "0",
+  "filter": "raw",
+  "acf": ""
+ }
+}

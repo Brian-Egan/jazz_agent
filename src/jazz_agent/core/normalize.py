@@ -6,6 +6,7 @@ act_name_raw; this module never mutates its input, only returns a cleaned copy.
 
 from __future__ import annotations
 
+import html
 import re
 
 # Longer, more specific phrases first so "Legacy Trio" strips as a unit rather
@@ -75,3 +76,45 @@ def normalize_act_name(raw: str) -> str:
         name = _LEADING_THE.sub("", name).strip()
 
     return name
+
+
+# --- CapitalBop act names (DC section 2) -------------------------------------------------
+
+_STATUS_WORDS = r"(?:sold\s*out|cancel+ed|postponed)"
+
+# `***SOLD OUT***`, `**SOLD OUT**`, `(CANCELLED)`: delimited markers are unambiguous in any case.
+_DELIMITED_STATUS = re.compile(
+    rf"\*+\s*{_STATUS_WORDS}\s*\*+|[(\[]\s*{_STATUS_WORDS}\s*[)\]]", re.IGNORECASE
+)
+# `CANCELLED: Act`, `Act - POSTPONED`: needs punctuation to separate it from the name.
+_EDGE_STATUS = re.compile(
+    rf"^\s*{_STATUS_WORDS}\s*[:\-–—]\s*|\s*[:\-–—]\s*{_STATUS_WORDS}\s*$", re.IGNORECASE
+)
+# Bare `Act CANCELLED` is accepted only in capitals, so a band whose name happens to end in
+# "sold out" is not mangled.
+_BARE_UPPER_STATUS = re.compile(r"\s+(?:SOLD OUT|CANCELL?ED|POSTPONED)\s*$")
+_SPACES = re.compile(r"\s+")
+
+
+def clean_act_name(raw: str) -> str:
+    """Decode HTML entities and strip status markers from a CapitalBop act name.
+
+    ``Lalah Hathaway ***SOLD OUT***`` and ``Lalah Hathaway`` must be one act, so this runs
+    before deduplication and matching (DC section 2). It does not strip ensemble suffixes;
+    use ``normalize_listing_name`` for the full chain.
+    """
+    name = html.unescape(raw)
+    previous = None
+    while previous != name:
+        previous = name
+        name = _DELIMITED_STATUS.sub(" ", name)
+        name = _EDGE_STATUS.sub("", name)
+        name = _BARE_UPPER_STATUS.sub("", name)
+        name = _SPACES.sub(" ", name).strip()
+    return name
+
+
+def normalize_listing_name(raw: str) -> str:
+    """The identity of a CapitalBop act: entity decoding and status markers first, then the
+    existing suffix stripping (DC section 2)."""
+    return normalize_act_name(clean_act_name(raw))

@@ -1,0 +1,873 @@
+{
+ "events": [
+  {
+   "id": 30785,
+   "event_id": 25683,
+   "name": "Steve Ragsdale",
+   "start_date": "2026-10-11",
+   "start_date_display": "Sunday, October 11",
+   "start_time": "11:30:00",
+   "start_time_display": "11.30am",
+   "start_time_display_short": "11:30am",
+   "venue": {
+    "term_id": 2268,
+    "name": "LaPortas",
+    "slug": "laportas",
+    "term_group": 0,
+    "term_taxonomy_id": 2268,
+    "taxonomy": "venue",
+    "description": "",
+    "parent": 0,
+    "count": 1536,
+    "filter": "raw",
+    "term_order": "0"
+   },
+   "venue_detail": {
+    "address": "1600 Duke St, Alexandria, VA 22314, United States",
+    "geolocation": {
+     "address": "1600 Duke St, Alexandria, VA 22314, United States",
+     "lat": 38.8038401,
+     "lng": -77.05829030000001,
+     "zoom": 14,
+     "place_id": "ChIJHcHW5aqxt4kRY4Vnsef0eCY",
+     "name": "1600 Duke St",
+     "street_number": "1600",
+     "street_name": "Duke Street",
+     "street_name_short": "Duke St",
+     "city": "Alexandria",
+     "state": "Virginia",
+     "state_short": "VA",
+     "post_code": "22314",
+     "country": "United States",
+     "country_short": "US"
+    }
+   },
+   "cb_show": false,
+   "cb_pick": false,
+   "tags": [
+    {
+     "term_id": 2263,
+     "name": "All Ages",
+     "slug": "all-ages",
+     "term_group": 0,
+     "term_taxonomy_id": 2263,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 6761,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2259,
+     "name": "Drink Minimum",
+     "slug": "drink-minimum",
+     "term_group": 0,
+     "term_taxonomy_id": 2259,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 3801,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 19,
+     "name": "Full Menu",
+     "slug": "full-menu",
+     "term_group": 0,
+     "term_taxonomy_id": 19,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 9077,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "neighborhoods": [
+    {
+     "term_id": 2269,
+     "name": "Virginia",
+     "slug": "virginia",
+     "term_group": 0,
+     "term_taxonomy_id": 2269,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 0,
+     "count": 2373,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "description": "<p>Guitarist Steve Ragsdale performs standards and popular tunes with a light, harmonious touch.</p>\n",
+   "ticket_link": "",
+   "price": "",
+   "musicians_website": "",
+   "image": null,
+   "repeats": true
+  },
+  {
+   "id": 30786,
+   "event_id": 25683,
+   "name": "Steve Ragsdale",
+   "start_date": "2026-11-08",
+   "start_date_display": "Sunday, November 8",
+   "start_time": "11:30:00",
+   "start_time_display": "11.30am",
+   "start_time_display_short": "11:30am",
+   "venue": {
+    "term_id": 2268,
+    "name": "LaPortas",
+    "slug": "laportas",
+    "term_group": 0,
+    "term_taxonomy_id": 2268,
+    "taxonomy": "venue",
+    "description": "",
+    "parent": 0,
+    "count": 1536,
+    "filter": "raw",
+    "term_order": "0"
+   },
+   "venue_detail": {
+    "address": "1600 Duke St, Alexandria, VA 22314, United States",
+    "geolocation": {
+     "address": "1600 Duke St, Alexandria, VA 22314, United States",
+     "lat": 38.8038401,
+     "lng": -77.05829030000001,
+     "zoom": 14,
+     "place_id": "ChIJHcHW5aqxt4kRY4Vnsef0eCY",
+     "name": "1600 Duke St",
+     "street_number": "1600",
+     "street_name": "Duke Street",
+     "street_name_short": "Duke St",
+     "city": "Alexandria",
+     "state": "Virginia",
+     "state_short": "VA",
+     "post_code": "22314",
+     "country": "United States",
+     "country_short": "US"
+    }
+   },
+   "cb_show": false,
+   "cb_pick": false,
+   "tags": [
+    {
+     "term_id": 2263,
+     "name": "All Ages",
+     "slug": "all-ages",
+     "term_group": 0,
+     "term_taxonomy_id": 2263,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 6761,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2259,
+     "name": "Drink Minimum",
+     "slug": "drink-minimum",
+     "term_group": 0,
+     "term_taxonomy_id": 2259,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 3801,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 19,
+     "name": "Full Menu",
+     "slug": "full-menu",
+     "term_group": 0,
+     "term_taxonomy_id": 19,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 9077,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "neighborhoods": [
+    {
+     "term_id": 2269,
+     "name": "Virginia",
+     "slug": "virginia",
+     "term_group": 0,
+     "term_taxonomy_id": 2269,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 0,
+     "count": 2373,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "description": "<p>Guitarist Steve Ragsdale performs standards and popular tunes with a light, harmonious touch.</p>\n",
+   "ticket_link": "",
+   "price": "",
+   "musicians_website": "",
+   "image": null,
+   "repeats": true
+  },
+  {
+   "id": 37139,
+   "event_id": 37138,
+   "name": "Kofi B ***SOLD OUT***",
+   "start_date": "2026-10-16",
+   "start_date_display": "Friday, October 16",
+   "start_time": "20:30:00",
+   "start_time_display": "8.30pm",
+   "start_time_display_short": "8:30pm",
+   "venue": {
+    "term_id": 2357,
+    "name": "Bethesda Theater",
+    "slug": "bethesda-theater",
+    "term_group": 0,
+    "term_taxonomy_id": 2357,
+    "taxonomy": "venue",
+    "description": "",
+    "parent": 0,
+    "count": 37,
+    "filter": "raw",
+    "term_order": "0"
+   },
+   "venue_detail": {
+    "address": null,
+    "geolocation": null
+   },
+   "cb_show": false,
+   "cb_pick": false,
+   "tags": [
+    {
+     "term_id": 2263,
+     "name": "All Ages",
+     "slug": "all-ages",
+     "term_group": 0,
+     "term_taxonomy_id": 2263,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 6761,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2259,
+     "name": "Drink Minimum",
+     "slug": "drink-minimum",
+     "term_group": 0,
+     "term_taxonomy_id": 2259,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 3801,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 19,
+     "name": "Full Menu",
+     "slug": "full-menu",
+     "term_group": 0,
+     "term_taxonomy_id": 19,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 9077,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "neighborhoods": [
+    {
+     "term_id": 2435,
+     "name": "Bethesda/Chevy Chase",
+     "slug": "bethesda-chevy-chase",
+     "term_group": 0,
+     "term_taxonomy_id": 2435,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 2416,
+     "count": 140,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2257,
+     "name": "Maryland",
+     "slug": "maryland",
+     "term_group": 0,
+     "term_taxonomy_id": 2257,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 0,
+     "count": 1081,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2416,
+     "name": "Montgomery County",
+     "slug": "montgomery",
+     "term_group": 0,
+     "term_taxonomy_id": 2416,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 2257,
+     "count": 683,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "description": "<p>***SOLD OUT***</p>\n<p>Keyboardist Kofi B performs contemporary jazz covers of modern soul classics, inflected with the elements of gospel. His style combines the melodicism of R&amp;B and rhythmic sensibilities of funk with intricate, jazzy piano grooves.</p>\n",
+   "ticket_link": "",
+   "price": "$40-75 (Plus $20 Minimum and $14.15-16.61 Fees)",
+   "musicians_website": {
+    "title": "artist's instagram",
+    "url": "https://www.instagram.com/kofibmusic/?hl=en",
+    "target": "_blank"
+   },
+   "image": null,
+   "repeats": false
+  },
+  {
+   "id": 37192,
+   "event_id": 37190,
+   "name": "John Scofield: &#8220;Electrospective&#8221; **SOLD OUT**",
+   "start_date": "2026-10-22",
+   "start_date_display": "Thursday, October 22",
+   "start_time": "20:00:00",
+   "start_time_display": "8pm",
+   "start_time_display_short": "8:00pm",
+   "venue": {
+    "term_id": 2449,
+    "name": "The Hamilton Live",
+    "slug": "the-hamilton-live",
+    "term_group": 0,
+    "term_taxonomy_id": 2449,
+    "taxonomy": "venue",
+    "description": "",
+    "parent": 0,
+    "count": 44,
+    "filter": "raw",
+    "term_order": "0"
+   },
+   "venue_detail": {
+    "address": "600 14th St NW, Washington, DC 20005, United States",
+    "geolocation": {
+     "address": "600 14th St NW, Washington, DC 20005, United States",
+     "lat": 38.89769619999999,
+     "lng": -77.0325758,
+     "zoom": 14,
+     "place_id": "ChIJpxyzz5e3t4kRAkqo0-Myc70",
+     "name": "600 14th St NW",
+     "street_number": "600",
+     "street_name": "14th Street Northwest",
+     "street_name_short": "14th St NW",
+     "city": "Washington",
+     "state": "District of Columbia",
+     "state_short": "DC",
+     "post_code": "20005",
+     "country": "United States",
+     "country_short": "US"
+    }
+   },
+   "cb_show": false,
+   "cb_pick": true,
+   "tags": [
+    {
+     "term_id": 2263,
+     "name": "All Ages",
+     "slug": "all-ages",
+     "term_group": 0,
+     "term_taxonomy_id": 2263,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 6761,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 20,
+     "name": "CB Pick",
+     "slug": "cb-pick",
+     "term_group": 0,
+     "term_taxonomy_id": 20,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 3456,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 19,
+     "name": "Full Menu",
+     "slug": "full-menu",
+     "term_group": 0,
+     "term_taxonomy_id": 19,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 9077,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 22,
+     "name": "Limited Seating",
+     "slug": "limited-seating",
+     "term_group": 0,
+     "term_taxonomy_id": 22,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 2507,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "neighborhoods": [
+    {
+     "term_id": 2418,
+     "name": "District of Columbia",
+     "slug": "dc",
+     "term_group": 0,
+     "term_taxonomy_id": 2418,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 0,
+     "count": 6411,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2261,
+     "name": "Downtown",
+     "slug": "downtown",
+     "term_group": 0,
+     "term_taxonomy_id": 2261,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 2419,
+     "count": 579,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2419,
+     "name": "Northwest",
+     "slug": "northwest",
+     "term_group": 0,
+     "term_taxonomy_id": 2419,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 2418,
+     "count": 5090,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "description": "<p>Legendary guitarist John Scofield’s clawing electric guitar sound is immediately recognizable, and he’s given to spiking an extended funk jam with wet, rock-ish riffs — but he swings with the baddest of them. He got his first big break with the unenviable task of replacing Pat Metheny in Gary Burton&#8217;s quartet in the late 70s and joined Miles Davis shortly thereafter for three of the Prince of Darkness&#8217; 80s albums. He&#8217;s since led a remarkable career flitting in between more traditional bop, groove, funk, electric bands and all other kinds of names.</p>\n<p>Here he leads his <em>Electrospective </em>project, which focuses more on those parts of his catalog best plied to extended funk jams.</p>\n<p>&nbsp;</p>\n<p>**This show is SOLD OUT**</p>\n",
+   "ticket_link": {
+    "title": "",
+    "url": "https://wl.eventim.us/event/john-scofields-electrospective/685362?afflky=TheHamiltonDC",
+    "target": "_blank"
+   },
+   "price": "$75-117",
+   "musicians_website": {
+    "title": "artist website",
+    "url": "https://www.johnscofield.com/",
+    "target": "_blank"
+   },
+   "image": "<img width=\"203\" height=\"203\" src=\"https://www.capitalbop.com/app/uploads/2026/10/scofield-electrospective-203x203.jpg\" class=\"attachment-meganav-sm size-meganav-sm\" alt=\"\" decoding=\"async\" srcset=\"https://www.capitalbop.com/app/uploads/2026/10/scofield-electrospective-203x203.jpg 203w, https://www.capitalbop.com/app/uploads/2026/10/scofield-electrospective-300x300.jpg 300w, https://www.capitalbop.com/app/uploads/2026/10/scofield-electrospective-150x150.jpg 150w, https://www.capitalbop.com/app/uploads/2026/10/scofield-electrospective-356x356.jpg 356w, https://www.capitalbop.com/app/uploads/2026/10/scofield-electrospective-406x406.jpg 406w, https://www.capitalbop.com/app/uploads/2026/10/scofield-electrospective-350x350.jpg 350w, https://www.capitalbop.com/app/uploads/2026/10/scofield-electrospective-200x200.jpg 200w, https://www.capitalbop.com/app/uploads/2026/10/scofield-electrospective-400x400.jpg 400w, https://www.capitalbop.com/app/uploads/2026/10/scofield-electrospective-312x312.jpg 312w, https://www.capitalbop.com/app/uploads/2026/10/scofield-electrospective-210x210.jpg 210w, https://www.capitalbop.com/app/uploads/2026/10/scofield-electrospective-420x420.jpg 420w, https://www.capitalbop.com/app/uploads/2026/10/scofield-electrospective-306x306.jpg 306w, https://www.capitalbop.com/app/uploads/2026/10/scofield-electrospective-324x324.jpg 324w, https://www.capitalbop.com/app/uploads/2026/10/scofield-electrospective-498x498.jpg 498w, https://www.capitalbop.com/app/uploads/2026/10/scofield-electrospective-265x265.jpg 265w, https://www.capitalbop.com/app/uploads/2026/10/scofield-electrospective-530x530.jpg 530w, https://www.capitalbop.com/app/uploads/2026/10/scofield-electrospective-438x438.jpg 438w, https://www.capitalbop.com/app/uploads/2026/10/scofield-electrospective.jpg 600w\" sizes=\"(max-width: 203px) 100vw, 203px\" />",
+   "repeats": false
+  },
+  {
+   "id": 37203,
+   "event_id": 37202,
+   "name": "Raphael Rogiński / Sarah Hughes",
+   "start_date": "2026-10-21",
+   "start_date_display": "Wednesday, October 21",
+   "start_time": "19:30:00",
+   "start_time_display": "7.30pm",
+   "start_time_display_short": "7:30pm",
+   "venue": {
+    "term_id": 2275,
+    "name": "Rhizome DC",
+    "slug": "rhizome-dc",
+    "term_group": 0,
+    "term_taxonomy_id": 2275,
+    "taxonomy": "venue",
+    "description": "",
+    "parent": 0,
+    "count": 183,
+    "filter": "raw",
+    "term_order": "0"
+   },
+   "venue_detail": {
+    "address": "6950 Maple St NW, Washington, DC 20012, United States",
+    "geolocation": {
+     "address": "6950 Maple St NW, Washington, DC 20012, United States",
+     "lat": 38.9741508,
+     "lng": -77.0156719,
+     "zoom": 14,
+     "place_id": "ChIJD_xGZIPIt4kRYZUqlDS5__k",
+     "name": "6950 Maple St NW",
+     "street_number": "6950",
+     "street_name": "Maple Street Northwest",
+     "street_name_short": "Maple St NW",
+     "city": "Washington",
+     "state": "District of Columbia",
+     "state_short": "DC",
+     "post_code": "20012",
+     "country": "United States",
+     "country_short": "US"
+    }
+   },
+   "cb_show": false,
+   "cb_pick": true,
+   "tags": [
+    {
+     "term_id": 2263,
+     "name": "All Ages",
+     "slug": "all-ages",
+     "term_group": 0,
+     "term_taxonomy_id": 2263,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 6761,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2274,
+     "name": "BYOB",
+     "slug": "byob",
+     "term_group": 0,
+     "term_taxonomy_id": 2274,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 201,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 20,
+     "name": "CB Pick",
+     "slug": "cb-pick",
+     "term_group": 0,
+     "term_taxonomy_id": 20,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 3456,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 22,
+     "name": "Limited Seating",
+     "slug": "limited-seating",
+     "term_group": 0,
+     "term_taxonomy_id": 22,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 2507,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "neighborhoods": [
+    {
+     "term_id": 2418,
+     "name": "District of Columbia",
+     "slug": "dc",
+     "term_group": 0,
+     "term_taxonomy_id": 2418,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 0,
+     "count": 6411,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2419,
+     "name": "Northwest",
+     "slug": "northwest",
+     "term_group": 0,
+     "term_taxonomy_id": 2419,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 2418,
+     "count": 5090,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2276,
+     "name": "Takoma",
+     "slug": "takoma-dc",
+     "term_group": 0,
+     "term_taxonomy_id": 2276,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 2419,
+     "count": 467,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "description": "<p>Polish guitarist and composer Raphael Rogiński performs interpretations of works by John Coltrane, accompanied by musical reflections on the poetry of Langston Hughes. The project features solo performance by Rogiński on electric guitar, fusing elements blues, jazz, world music and improvisation.</p>\n<p>Maryland-based saxophonist and multi-instrumentalist Sarah Hughes is a potent improviser with ears that amplify her creativity, as likely to light up a club with serious swing as she is to delight audiences with thunderbolts of free expression. Her experimental style, grounded in free improvisation, contains notes of blues, standards and modal jazz, playing around with abstract noise and stillness while also delivering stirring and meditative melodies.</p>\n",
+   "ticket_link": {
+    "title": "",
+    "url": "https://pools.events/event/GpLOrqbq/raphael-roginski-sarah-hughes/?i=X7u4uGww",
+    "target": "_blank"
+   },
+   "price": "$20-30",
+   "musicians_website": {
+    "title": "artist's bandcamp",
+    "url": "https://raphaelroginski.bandcamp.com/",
+    "target": "_blank"
+   },
+   "image": "<img width=\"203\" height=\"178\" src=\"https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-203x178.jpg\" class=\"attachment-meganav-sm size-meganav-sm\" alt=\"\" decoding=\"async\" srcset=\"https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-203x178.jpg 203w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-300x263.jpg 300w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-1024x898.jpg 1024w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-768x673.jpg 768w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-356x312.jpg 356w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-712x624.jpg 712w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-406x356.jpg 406w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-350x307.jpg 350w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-700x614.jpg 700w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-200x175.jpg 200w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-400x351.jpg 400w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-958x840.jpg 958w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-600x526.jpg 600w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-1200x1052.jpg 1200w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-693x608.jpg 693w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-1386x1215.jpg 1386w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-312x274.jpg 312w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-624x547.jpg 624w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-1040x912.jpg 1040w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-210x184.jpg 210w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-420x368.jpg 420w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-306x268.jpg 306w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-612x537.jpg 612w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-324x284.jpg 324w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-648x568.jpg 648w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-498x437.jpg 498w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-996x873.jpg 996w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-265x232.jpg 265w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-530x465.jpg 530w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-438x384.jpg 438w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-876x768.jpg 876w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-611x536.jpg 611w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1-1222x1071.jpg 1222w, https://www.capitalbop.com/app/uploads/2025/11/sarahhughes1.jpg 1500w\" sizes=\"(max-width: 203px) 100vw, 203px\" />",
+   "repeats": false
+  },
+  {
+   "id": 21607,
+   "event_id": 5964,
+   "name": "Dave Manley Duo",
+   "start_date": "2026-10-11",
+   "start_date_display": "Sunday, October 11",
+   "start_time": "20:00:00",
+   "start_time_display": "8pm",
+   "start_time_display_short": "8:00pm",
+   "venue": {
+    "term_id": 2304,
+    "name": "The Golden Age",
+    "slug": "the-golden-age",
+    "term_group": 0,
+    "term_taxonomy_id": 2304,
+    "taxonomy": "venue",
+    "description": "",
+    "parent": 0,
+    "count": 158,
+    "filter": "raw",
+    "term_order": "0"
+   },
+   "venue_detail": {
+    "address": null,
+    "geolocation": null
+   },
+   "cb_show": false,
+   "cb_pick": false,
+   "tags": [
+    {
+     "term_id": 21,
+     "name": "18+",
+     "slug": "18",
+     "term_group": 0,
+     "term_taxonomy_id": 21,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 1975,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2258,
+     "name": "Free",
+     "slug": "free",
+     "term_group": 0,
+     "term_taxonomy_id": 2258,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 2294,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "neighborhoods": [
+    {
+     "term_id": 2418,
+     "name": "District of Columbia",
+     "slug": "dc",
+     "term_group": 0,
+     "term_taxonomy_id": 2418,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 0,
+     "count": 6411,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2272,
+     "name": "Georgetown/Dupont Circle",
+     "slug": "georgetown-dupont-circle",
+     "term_group": 0,
+     "term_taxonomy_id": 2272,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 2419,
+     "count": 1766,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2419,
+     "name": "Northwest",
+     "slug": "northwest",
+     "term_group": 0,
+     "term_taxonomy_id": 2419,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 2418,
+     "count": 5090,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "description": "<p>Guitarist Dave Manley, who navigates the fretboard with the flair and flow of Carlos Santana mixed with Wes Montgomery, performs a synthesis of improvised music that is surely indebted to jazz but draw on rock, hip-hop and everything in between.</p>\n<p>Manley is joined by a guest – often longtime D.C. pianist Sammy Mungia – every Sunday at this pre-prohibition era cocktail bar in Dupont Circle. The duo runs through standards and contemporary classics.</p>\n",
+   "ticket_link": "",
+   "price": "No Cover",
+   "musicians_website": {
+    "title": "artist's website",
+    "url": "https://www.davemanleymusic.com/",
+    "target": "_blank"
+   },
+   "image": "<img width=\"203\" height=\"203\" src=\"https://www.capitalbop.com/app/uploads/2025/04/dave-manley-203x203.jpg\" class=\"attachment-meganav-sm size-meganav-sm\" alt=\"\" decoding=\"async\" srcset=\"https://www.capitalbop.com/app/uploads/2025/04/dave-manley-203x203.jpg 203w, https://www.capitalbop.com/app/uploads/2025/04/dave-manley-150x150.jpg 150w, https://www.capitalbop.com/app/uploads/2025/04/dave-manley-200x200.jpg 200w, https://www.capitalbop.com/app/uploads/2025/04/dave-manley-210x210.jpg 210w, https://www.capitalbop.com/app/uploads/2025/04/dave-manley.jpg 225w\" sizes=\"(max-width: 203px) 100vw, 203px\" />",
+   "repeats": true
+  },
+  {
+   "id": 31579,
+   "event_id": 5993,
+   "name": "DC Jazz Jam",
+   "start_date": "2026-10-11",
+   "start_date_display": "Sunday, October 11",
+   "start_time": "18:30:00",
+   "start_time_display": "6.30pm",
+   "start_time_display_short": "6:30pm",
+   "venue": {
+    "term_id": 2319,
+    "name": "Haydee&#039;s Restaurant",
+    "slug": "haydees-restaurant",
+    "term_group": 0,
+    "term_taxonomy_id": 2319,
+    "taxonomy": "venue",
+    "description": "",
+    "parent": 0,
+    "count": 210,
+    "filter": "raw",
+    "term_order": "0"
+   },
+   "venue_detail": {
+    "address": null,
+    "geolocation": null
+   },
+   "cb_show": false,
+   "cb_pick": false,
+   "tags": [
+    {
+     "term_id": 2258,
+     "name": "Free",
+     "slug": "free",
+     "term_group": 0,
+     "term_taxonomy_id": 2258,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 2294,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 19,
+     "name": "Full Menu",
+     "slug": "full-menu",
+     "term_group": 0,
+     "term_taxonomy_id": 19,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 9077,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2298,
+     "name": "Jam Session",
+     "slug": "jam-session",
+     "term_group": 0,
+     "term_taxonomy_id": 2298,
+     "taxonomy": "tag",
+     "description": "",
+     "parent": 0,
+     "count": 1449,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "neighborhoods": [
+    {
+     "term_id": 2418,
+     "name": "District of Columbia",
+     "slug": "dc",
+     "term_group": 0,
+     "term_taxonomy_id": 2418,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 0,
+     "count": 6411,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2302,
+     "name": "Mount Pleasant",
+     "slug": "mount-pleasant",
+     "term_group": 0,
+     "term_taxonomy_id": 2302,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 2419,
+     "count": 237,
+     "filter": "raw",
+     "term_order": "0"
+    },
+    {
+     "term_id": 2419,
+     "name": "Northwest",
+     "slug": "northwest",
+     "term_group": 0,
+     "term_taxonomy_id": 2419,
+     "taxonomy": "neighborhood",
+     "description": "",
+     "parent": 2418,
+     "count": 5090,
+     "filter": "raw",
+     "term_order": "0"
+    }
+   ],
+   "description": "<p>While there are many formal and informal jams in and around the Beltway every week, the D.C. jazz jam is the flagship event for the city’s jazz scene. Organized by drummer Will Stephens, the jam becomes a hangout and classroom for cats of all levels of experience; now with a rotating cast of hosts among the city&#8217;s best musicians.</p>\n<p>Formerly hosted on U Street, the jam now holds forth in Mt. Pleasant.</p>\n",
+   "ticket_link": "",
+   "price": "",
+   "musicians_website": "",
+   "image": null,
+   "repeats": true
+  }
+ ],
+ "max_pages": 2
+}

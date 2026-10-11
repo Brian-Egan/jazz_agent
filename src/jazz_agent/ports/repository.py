@@ -160,10 +160,40 @@ class RollingPlaylistRepo(Protocol):
     def record_event(self, event: RollingPlaylistEvent) -> None: ...
 
 
+class VenueMirrorRepo(Protocol):
+    def upsert_capitalbop_venue(self, slug: str, term_id: int, name: str) -> str:
+        """Mirror one venue as a ``cb-<slug>`` clubs row and return its club_id. Writes the
+        name and term id only: never ``city_override``, notes, or ``active`` (DC section 3)."""
+        ...
+
+    def city_overrides(self) -> dict[str, str]:
+        """club_id -> hand-set city, for venues that have one."""
+        ...
+
+
 class CapitalbopRepo(Protocol):
-    def upsert_event(self, event: CapitalbopEvent) -> None:
+    def upsert_event(self, event: CapitalbopEvent, seen_at: datetime | None = None) -> None:
         """Insert, or refresh every field and last_seen_at, keyed on instance_id.
-        first_seen_at is preserved."""
+        first_seen_at is preserved. ``seen_at`` (default now) is the fetch's timestamp,
+        shared by every event of one run so the cancellation sweep can compare against it."""
+        ...
+
+    def known_event_ids(self, event_ids: Sequence[int]) -> set[int]:
+        """Which of these series already have at least one stored instance."""
+        ...
+
+    def cancelled_instance_ids(
+        self, start: date, end: date, fetch_started_at: datetime
+    ) -> set[int]:
+        """Stored instances showing in [start, end] whose last_seen_at predates this run's
+        fetch: absent from a complete fetch, hence cancelled (DC section 2). Call only after
+        a complete fetch; rows are never deleted."""
+        ...
+
+    def set_series_article(
+        self, event_id: int, title: str, url: str, published: date | None
+    ) -> None:
+        """Record a series' linked article on every stored instance of it."""
         ...
 
     def get_event(self, instance_id: int) -> CapitalbopEvent | None: ...
