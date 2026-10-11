@@ -183,9 +183,10 @@ events are extracted, which is what keeps Haiku cost at cents a week.
 | **Not a resident** | The cleaned act name has **≤ 3** distinct show dates in the window, counted across every venue |
 | **Geography** | Resolved city (DC §3) ∈ {Washington, Alexandria, Arlington} |
 
-Measured against the live feed on 2026-10-10 (window Oct 10 – Nov 15): `dc` 9 artists
-(5 / 4 / 0 by slot), `blues-alley` 16, `alxjazz` 13. These are pre-match ceilings — acts
-that fail matching drop out.
+Measured against the live feed on 2026-10-11 (window Oct 11 – Nov 15): `dc` 10 artists
+(5 / 5 / 0 by slot), `blues-alley` 16, `alxjazz` 13. The feed gains shows daily, so these
+counts drift; `tests/fixtures/capitalbop/eligibility_snapshot.json` pins this snapshot. These
+are pre-match ceilings — acts that fail matching drop out.
 
 ---
 
