@@ -149,13 +149,17 @@ date.
 - `artist_profile(artist_name)` -- Genres, MusicBrainz tags, instruments, groups, collaborators, and feedback history for one artist, in a single call.
 - `get_listening_candidates()` -- Currently-playing plus recently-played, joined to the log. Read-only; call record_feedback with a target from here to attach sentiment.
 - `get_run_health(days?)` -- Per-club pipeline run outcomes, most recent first.
+- `list_venue_groups()` -- The three DC venue groups (dc, blues-alley, alxjazz): their active venues with filter profiles, and each playlist's Spotify URL (null until the first run creates it).
 - `recent_feedback(sentiment?, limit?)` -- Recently recorded feedback, optionally filtered by sentiment.
 - `search_notes(query)` -- Free text over notes and listings (stemmed and typo-tolerant).
 - `search_shows(query?, club?, date_from?, date_to?)` -- Structured and fuzzy show lookup.
 - `whats_playing_at(club, on_date)` -- What played at a given club on a given date.
+- `when_is_playing(name, region?)` -- Upcoming, non-cancelled shows for an act or a performer, soonest first -- fuzzy over act and performer names, so 'Sharon Clark' finds 'Sharon Clark Trio'. Each row has the date, start time (ET), venue, address, price, ticket link, the CapitalBop article if any, and the rolling playlist the act is in, if any. Covers every stored show, whether or not it made a playlist.
 
 **Writes**
 
+- `add_venue_to_group(venue, group, profile?)` -- Add a CapitalBop venue to one of the three DC groups, matching the venue by name. Writes only if exactly one venue matches; otherwise it returns the candidates and changes nothing. A venue already in another dedicated group (blues-alley, alxjazz) is rejected, naming that group. Takes effect on the next daily run. Cannot create groups or playlists.
+- `deactivate_venue(venue, group)` -- Remove a venue from a DC group. The membership is stamped inactive, never deleted, and the venue can be added again. Takes effect on the next daily run.
 - `record_feedback(target_type, target_id, sentiment?, note?)` -- Attach sentiment and/or a note to an artist, track, or album -- never a weekly playlist (ADR-014). sentiment must be exactly 'liked', 'disliked', or 'neutral' -- no other values, synonyms, or intensity variants (e.g. not 'dislike', 'negative', 'thumbs_down'). A note alone, with no sentiment, is also valid. Rejects a target that doesn't resolve.
 
 <!-- END GENERATED TOOL INVENTORY -->

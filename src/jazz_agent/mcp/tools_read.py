@@ -259,3 +259,95 @@ def artist_connections(
             connections.append({**row, "source": "co_performance"})
 
         return connections
+
+
+_REGIONS = {"dc", "nyc"}
+# Names this similar (word_similarity, accents and case ignored) count as the same act.
+_NAME_MATCH_THRESHOLD = 0.6
+
+
+def when_is_playing(
+    pool: ConnectionPool,
+    name: str,
+    region: str | None = None,
+    limit: int = 50,
+    today: date | None = None,
+) -> list[dict[str, Any]]:
+    """Upcoming, non-cancelled shows for an act or a performer, soonest first.
+
+    Fuzzy over act names and performer names (pg_trgm over accent-folded text, so "Sharon
+    Clark" finds "Sharon Clark Trio"). Covers every stored show, eligible for a playlist or
+    not. A DC show whose event the latest complete fetch no longer carried is cancelled
+    (DC section 2) and is left out; the cancellation test is "last seen before the newest
+    fetch", which is why no row is ever deleted.
+    """
+    if region is not None and region not in _REGIONS:
+        raise ValueError(f"region must be one of {sorted(_REGIONS)}, got {region!r}")
+    region_filter = {
+        None: "TRUE",
+        "dc": "e.instance_id IS NOT NULL",
+        "nyc": "e.instance_id IS NULL",
+    }[region]
+
+    with pool.connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        cur.execute(
+            f"""
+            SELECT s.show_id, s.show_date, s.act_name_raw AS act, e.start_time, s.set_times,
+                   c.name AS venue, e.venue_address AS address, e.price_text AS price,
+                   e.ticket_link, e.article_title, e.article_url, pl.playlists
+            FROM shows s
+            JOIN clubs c ON c.club_id = s.club_id
+            LEFT JOIN capitalbop_events e ON e.show_id = s.show_id
+            LEFT JOIN LATERAL (
+                SELECT coalesce(
+                    jsonb_agg(DISTINCT jsonb_build_object(
+                        'slot_key', rp.slot_key, 'title', rp.title, 'url', rp.spotify_url)),
+                    '[]'::jsonb) AS playlists
+                FROM show_artists sa
+                JOIN rolling_playlist_tracks t
+                  ON t.spotify_artist_id = sa.spotify_artist_id AND t.removed_at IS NULL
+                JOIN rolling_playlists rp ON rp.id = t.rolling_playlist_id
+                WHERE sa.show_id = s.show_id
+            ) pl ON TRUE
+            WHERE s.show_date >= COALESCE(
+                      %(today)s, (now() AT TIME ZONE 'America/New_York')::date)
+              AND (e.instance_id IS NULL
+                   OR e.last_seen_at >= (SELECT max(last_seen_at) FROM capitalbop_events))
+              AND {region_filter}
+              AND (
+                  word_similarity(unaccent(lower(%(q)s)), unaccent(lower(s.act_name_raw)))
+                      >= %(threshold)s
+                  OR EXISTS (
+                      SELECT 1 FROM show_performers sp
+                      JOIN performers p ON p.performer_id = sp.performer_id
+                      WHERE sp.show_id = s.show_id
+                        AND word_similarity(unaccent(lower(%(q)s)), unaccent(p.name_norm))
+                            >= %(threshold)s
+                  )
+              )
+            ORDER BY s.show_date, e.start_time NULLS LAST, s.act_name_raw
+            LIMIT %(limit)s
+            """,  # noqa: S608 -- region_filter is chosen from a fixed map above
+            {"q": name, "threshold": _NAME_MATCH_THRESHOLD, "limit": limit, "today": today},
+        )
+        rows = cur.fetchall()
+
+    return [
+        {
+            "show_id": r["show_id"],
+            "date": r["show_date"],
+            "act": r["act"],
+            # Eastern time, as CapitalBop lists it; NYC shows carry their set times instead.
+            "start_time": r["start_time"].strftime("%H:%M") if r["start_time"] else None,
+            "set_times": r["set_times"],
+            "venue": r["venue"],
+            "address": r["address"],
+            "price": r["price"],
+            "ticket_link": r["ticket_link"] or None,
+            "article": (
+                {"title": r["article_title"], "url": r["article_url"]} if r["article_url"] else None
+            ),
+            "playlists": r["playlists"],
+        }
+        for r in rows
+    ]

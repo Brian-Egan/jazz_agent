@@ -115,6 +115,7 @@ def _to_capitalbop_event(event: CalendarEvent, show_id: int) -> CapitalbopEvent:
         repeats=event.repeats,
         neighborhoods=event.neighborhoods,
         geocoded_city=event.geocoded_city,
+        venue_address=event.venue_address or None,
         description_html=event.description_html,
         description_hash=hashlib.sha256(event.description_html.encode()).hexdigest(),
     )

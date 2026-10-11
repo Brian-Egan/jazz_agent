@@ -28,7 +28,7 @@ from psycopg_pool import ConnectionPool
 
 from jazz_agent.adapters.pg.run_repo import PgRunRepo
 from jazz_agent.config import Config
-from jazz_agent.mcp import tools_feedback, tools_read
+from jazz_agent.mcp import tools_feedback, tools_read, tools_venues
 from jazz_agent.ports.music import MusicService
 
 
@@ -70,6 +70,23 @@ def build_server(config: Config, pool: ConnectionPool, music: MusicService) -> F
     def whats_playing_at(club: str, on_date: date) -> list[dict[str, Any]]:
         """What played at a given club on a given date."""
         return tools_read.whats_playing_at(pool, club, on_date)
+
+    @mcp.tool(auth=check)
+    def when_is_playing(
+        name: str, region: Literal["dc", "nyc"] | None = None
+    ) -> list[dict[str, Any]]:
+        """Upcoming, non-cancelled shows for an act or a performer, soonest first -- fuzzy over
+        act and performer names, so 'Sharon Clark' finds 'Sharon Clark Trio'. Each row has the
+        date, start time (ET), venue, address, price, ticket link, the CapitalBop article if
+        any, and the rolling playlist the act is in, if any. Covers every stored show, whether
+        or not it made a playlist."""
+        return tools_read.when_is_playing(pool, name, region=region)
+
+    @mcp.tool(auth=check)
+    def list_venue_groups() -> dict[str, Any]:
+        """The three DC venue groups (dc, blues-alley, alxjazz): their active venues with
+        filter profiles, and each playlist's Spotify URL (null until the first run creates it)."""
+        return tools_venues.list_venue_groups(pool)
 
     @mcp.tool(auth=check)
     def search_notes(query: str) -> list[dict[str, Any]]:
@@ -117,6 +134,27 @@ def build_server(config: Config, pool: ConnectionPool, music: MusicService) -> F
         variants (e.g. not 'dislike', 'negative', 'thumbs_down'). A note alone,
         with no sentiment, is also valid. Rejects a target that doesn't resolve."""
         return tools_feedback.record_feedback(pool, target_type, target_id, sentiment, note)
+
+    @mcp.tool(auth=check)
+    def add_venue_to_group(
+        venue: str,
+        group: Literal["dc", "blues-alley", "alxjazz"],
+        profile: Literal["all", "standard", "standard_no_pick", "early_evening"] = "standard",
+    ) -> dict[str, Any]:
+        """Add a CapitalBop venue to one of the three DC groups, matching the venue by name.
+        Writes only if exactly one venue matches; otherwise it returns the candidates and
+        changes nothing. A venue already in another dedicated group (blues-alley, alxjazz) is
+        rejected, naming that group. Takes effect on the next daily run. Cannot create groups
+        or playlists."""
+        return tools_venues.add_venue_to_group(pool, venue, group, profile)
+
+    @mcp.tool(auth=check)
+    def deactivate_venue(
+        venue: str, group: Literal["dc", "blues-alley", "alxjazz"]
+    ) -> dict[str, Any]:
+        """Remove a venue from a DC group. The membership is stamped inactive, never deleted,
+        and the venue can be added again. Takes effect on the next daily run."""
+        return tools_venues.deactivate_venue(pool, venue, group)
 
     return mcp
 
