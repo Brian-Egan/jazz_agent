@@ -8,6 +8,7 @@ implementation lives in adapters/pg/.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from contextlib import AbstractContextManager
 from datetime import date, datetime
 from typing import Protocol
 
@@ -28,9 +29,11 @@ from jazz_agent.core.models import (
     RollingPlaylistTrack,
     RunLogEntry,
     Show,
+    StoredEvent,
     VenueGroupMember,
     WeekPlaylist,
 )
+from jazz_agent.core.novelty import FeedbackEntry
 
 
 class ClubRepo(Protocol):
@@ -99,6 +102,9 @@ class PlaylistRepo(Protocol):
 class FeedbackRepo(Protocol):
     def record_feedback(self, feedback: Feedback) -> int: ...
     def feedback_for_target(self, target_type: str, target_id: str) -> list[Feedback]: ...
+    def novelty_entries(self) -> list[FeedbackEntry]:
+        """Every artist- and track-level feedback row with its timestamp, for DC novelty."""
+        ...
 
 
 class RunRepo(Protocol):
@@ -143,6 +149,14 @@ class RollingPlaylistRepo(Protocol):
         self, rolling_playlist_id: int, spotify_playlist_id: str, spotify_url: str
     ) -> None: ...
     def get_rolling_playlist(self, region: str, slot_key: str) -> RollingPlaylist | None: ...
+    def set_sync_pending(self, rolling_playlist_id: int, pending: bool) -> None:
+        """Mark the window between the database write and the Spotify write (migration 0004)."""
+        ...
+
+    def set_stint_position(self, stint_id: int, position: int) -> None:
+        """Reorder an open stint in place; a reorder is not a removal."""
+        ...
+
     def open_stints(self, rolling_playlist_id: int) -> list[RollingPlaylistTrack]: ...
     def open_stint(self, track: RollingPlaylistTrack) -> int:
         """Open a stint. Raises if the track already has an open stint on this playlist."""
@@ -196,8 +210,25 @@ class CapitalbopRepo(Protocol):
         """Record a series' linked article on every stored instance of it."""
         ...
 
+    def window_events(self, start: date, end: date) -> list[StoredEvent]:
+        """Every stored instance showing in [start, end], joined to its show and venue."""
+        ...
+
+    def artist_has_shows(self, spotify_artist_id: str, start: date, end: date) -> bool:
+        """Whether a matched artist still has any stored show (cancelled or not) in the range.
+        Tells ``rolled_off`` (nothing left in the window) from ``ineligible`` (still booked)."""
+        ...
+
     def get_event(self, instance_id: int) -> CapitalbopEvent | None: ...
     def get_extraction(self, event_id: int, description_hash: str) -> dict[str, object] | None: ...
     def put_extraction(
         self, event_id: int, description_hash: str, result: dict[str, object], model: str
     ) -> None: ...
+
+
+class RunLock(Protocol):
+    def hold(self, name: str) -> AbstractContextManager[bool]:
+        """Try to take a named cross-process lock; yields whether it was acquired and
+        releases on exit. Pipeline runs can overlap, so DC (which creates Spotify playlists
+        and writes stints) must not run twice at once."""
+        ...

@@ -10,13 +10,15 @@ from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 from psycopg_pool import ConnectionPool
 
-from jazz_agent.core.models import CapitalbopEvent
+from jazz_agent.core.models import CapitalbopEvent, StoredEvent
 
 _COLUMNS = (
     "instance_id, event_id, show_id, start_time, price_text, ticket_link, cb_pick, tags, "
     "repeats, neighborhoods, geocoded_city, description_html, description_hash, "
     "article_title, article_url, article_date, first_seen_at, last_seen_at"
 )
+
+_COLUMN_NAMES = frozenset(c.strip() for c in _COLUMNS.split(","))
 
 
 def _row_to_event(row: dict[str, Any]) -> CapitalbopEvent:
@@ -74,6 +76,50 @@ class PgCapitalbopRepo:
                     seen_at,
                 ),
             )
+
+    def window_events(self, start: date, end: date) -> list[StoredEvent]:
+        qualified = ", ".join(f"e.{c.strip()}" for c in _COLUMNS.split(","))
+        with self._pool.connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                f"""
+                SELECT {qualified}, s.club_id, c.name AS venue_name, s.show_date,
+                       s.act_name_raw, s.act_name_norm, c.city_override
+                FROM capitalbop_events e
+                JOIN shows s ON s.show_id = e.show_id
+                JOIN clubs c ON c.club_id = s.club_id
+                WHERE s.show_date BETWEEN %s AND %s
+                ORDER BY s.show_date, e.instance_id
+                """,
+                (start, end),
+            )
+            rows = cur.fetchall()
+        return [
+            StoredEvent(
+                event=_row_to_event({k: v for k, v in row.items() if k in _COLUMN_NAMES}),
+                club_id=row["club_id"],
+                venue_name=row["venue_name"],
+                show_date=row["show_date"],
+                act_name=row["act_name_raw"],
+                act_name_norm=row["act_name_norm"],
+                city_override=row["city_override"],
+            )
+            for row in rows
+        ]
+
+    def artist_has_shows(self, spotify_artist_id: str, start: date, end: date) -> bool:
+        with self._pool.connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT 1
+                FROM show_artists sa
+                JOIN capitalbop_events e ON e.show_id = sa.show_id
+                JOIN shows s ON s.show_id = sa.show_id
+                WHERE sa.spotify_artist_id = %s AND s.show_date BETWEEN %s AND %s
+                LIMIT 1
+                """,
+                (spotify_artist_id, start, end),
+            )
+            return cur.fetchone() is not None
 
     def get_event(self, instance_id: int) -> CapitalbopEvent | None:
         with self._pool.connection() as conn, conn.cursor(row_factory=dict_row) as cur:

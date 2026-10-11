@@ -256,6 +256,8 @@ class RollingPlaylist:
     id: int | None = None
     spotify_playlist_id: str | None = None
     spotify_url: str | None = None
+    # True between the database write and a successful Spotify write (migration 0004).
+    sync_pending: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -351,3 +353,16 @@ class CalendarArticle:
     title: str
     url: str
     published: date | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class StoredEvent:
+    """One mirrored CapitalBop instance joined to its show and venue (DC sections 3, 5)."""
+
+    event: CapitalbopEvent
+    club_id: str
+    venue_name: str
+    show_date: date
+    act_name: str
+    act_name_norm: str
+    city_override: str | None = None
