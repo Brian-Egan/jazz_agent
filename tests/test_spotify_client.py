@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 import httpx
+import pytest
 import respx
 
 from jazz_agent.adapters.spotify import SpotifyClient
@@ -293,6 +294,151 @@ def test_429_respects_retry_after_header() -> None:
 
     assert route.call_count == 2
     assert sleeps == [2.0]
+
+
+@respx.mock
+def test_create_playlist_public_flag() -> None:
+    _mock_token()
+    route = respx.post("https://api.spotify.com/v1/me/playlists").mock(
+        return_value=httpx.Response(201, json={"id": "p"})
+    )
+
+    _client().create_playlist("DC Jazz", "desc", public=True)
+
+    assert json.loads(route.calls.last.request.content)["public"] is True
+
+
+@respx.mock
+def test_search_tracks_caps_each_request_at_10_and_pages_by_offset() -> None:
+    # Feb 2026 migration: /search limit max 50 -> 10.
+    _mock_token()
+    pages = {
+        0: [{"id": f"t{i}"} for i in range(10)],
+        10: [{"id": f"t{i}"} for i in range(10, 15)],
+    }
+    route = respx.get("https://api.spotify.com/v1/search").mock(
+        side_effect=lambda r: httpx.Response(
+            200, json={"tracks": {"items": pages[int(r.url.params["offset"])]}}
+        )
+    )
+
+    tracks = _client().search_tracks('artist:"Bill Frisell"', limit=15)
+
+    assert [t["id"] for t in tracks] == [f"t{i}" for i in range(15)]
+    sent = [(c.request.url.params["limit"], c.request.url.params["offset"]) for c in route.calls]
+    assert sent == [("10", "0"), ("5", "10")]
+    assert route.calls.last.request.url.params["type"] == "track"
+
+
+@respx.mock
+def test_search_tracks_stops_on_a_short_page() -> None:
+    _mock_token()
+    route = respx.get("https://api.spotify.com/v1/search").mock(
+        return_value=httpx.Response(200, json={"tracks": {"items": [{"id": "only"}]}})
+    )
+
+    assert _client().search_tracks("x", limit=10) == [{"id": "only"}]
+    assert route.call_count == 1
+
+
+def _items_page(ids: list[str], next_url: str | None, key: str = "item") -> dict[str, object]:
+    return {
+        "next": next_url,
+        "items": [
+            {key: {"id": i, "name": f"Name {i}", "external_ids": {"isrc": f"ISRC{i}"}}} for i in ids
+        ],
+    }
+
+
+@respx.mock
+def test_get_playlist_items_reads_every_page_with_ids_and_isrcs() -> None:
+    _mock_token()
+    base = "https://api.spotify.com/v1/playlists/pl1/items"
+    respx.get(base).mock(
+        side_effect=lambda r: httpx.Response(
+            200,
+            json=_items_page(["a", "b"], "next")
+            if r.url.params["offset"] == "0"
+            else _items_page(["c"], None),
+        )
+    )
+
+    items = _client().get_playlist_items("pl1")
+
+    assert [i["id"] for i in items] == ["a", "b", "c"]
+    assert items[0]["isrc"] == "ISRCa" and items[0]["name"] == "Name a"
+
+
+@respx.mock
+def test_get_playlist_items_raises_on_a_failed_second_page_rather_than_returning_page_one() -> None:
+    _mock_token()
+    base = "https://api.spotify.com/v1/playlists/pl1/items"
+    respx.get(base).mock(
+        side_effect=lambda r: (
+            httpx.Response(200, json=_items_page(["a"], "next"))
+            if r.url.params["offset"] == "0"
+            else httpx.Response(403)
+        )
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        _client().get_playlist_items("pl1")
+
+
+@respx.mock
+def test_get_playlist_items_accepts_the_old_track_key_and_skips_unplayable_entries() -> None:
+    _mock_token()
+    payload = _items_page(["a"], None, key="track")
+    payload["items"].append({"item": None})  # type: ignore[attr-defined]
+    payload["items"].append({"track": {"id": None, "name": "local file"}})  # type: ignore[attr-defined]
+    respx.get("https://api.spotify.com/v1/playlists/pl1/items").mock(
+        return_value=httpx.Response(200, json=payload)
+    )
+
+    assert [i["id"] for i in _client().get_playlist_items("pl1")] == ["a"]
+
+
+@respx.mock
+def test_replace_playlist_items_puts_to_items_and_appends_past_100() -> None:
+    _mock_token()
+    put = respx.put("https://api.spotify.com/v1/playlists/pl1/items").mock(
+        return_value=httpx.Response(200, json={"snapshot_id": "s"})
+    )
+    post = respx.post("https://api.spotify.com/v1/playlists/pl1/items").mock(
+        return_value=httpx.Response(201, json={"snapshot_id": "s"})
+    )
+
+    _client().replace_playlist_items("pl1", [f"t{i}" for i in range(130)])
+
+    assert len(json.loads(put.calls.last.request.content)["uris"]) == 100
+    assert json.loads(post.calls.last.request.content)["uris"][0] == "spotify:track:t100"
+
+
+@respx.mock
+def test_replace_playlist_items_with_nothing_empties_the_playlist() -> None:
+    _mock_token()
+    put = respx.put("https://api.spotify.com/v1/playlists/pl1/items").mock(
+        return_value=httpx.Response(200, json={})
+    )
+
+    _client().replace_playlist_items("pl1", [])
+
+    assert json.loads(put.calls.last.request.content) == {"uris": []}
+
+
+@respx.mock
+def test_update_playlist_details_puts_name_and_description_only() -> None:
+    _mock_token()
+    put = respx.put("https://api.spotify.com/v1/playlists/pl1").mock(
+        return_value=httpx.Response(200)
+    )
+
+    _client().update_playlist_details("pl1", "New title", "New description")
+
+    assert json.loads(put.calls.last.request.content) == {
+        "name": "New title",
+        "description": "New description",
+    }
 
 
 def test_client_satisfies_music_service_protocol() -> None:
