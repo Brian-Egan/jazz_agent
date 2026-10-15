@@ -30,7 +30,7 @@ from jazz_agent.core.eligibility import (
     starts_early_evening,
 )
 from jazz_agent.core.normalize import clean_act_name, normalize_listing_name
-from jazz_agent.core.weeks import dc_slot, dc_week_number, dc_window
+from jazz_agent.core.weeks import dc_week_number, dc_window
 
 FIXTURES = Path(__file__).parent / "fixtures" / "capitalbop"
 
@@ -72,26 +72,19 @@ def test_window_runs_from_today_to_the_sunday_ending_week_six(today: date, end: 
 
 
 @pytest.mark.parametrize(
-    ("d", "week", "slot"),
+    ("d", "week"),
     [
-        (date(2026, 10, 11), 1, 1),
-        (date(2026, 10, 18), 2, 1),  # Sunday ending week 2
-        (date(2026, 10, 19), 3, 2),  # Monday starting week 3
-        (date(2026, 11, 1), 4, 2),
-        (date(2026, 11, 2), 5, 3),
-        (date(2026, 11, 15), 6, 3),
-        (date(2026, 11, 16), 7, None),
-        (date(2026, 10, 10), 1, None),  # same week as today but before it: outside the window
-        (date(2026, 10, 4), 0, None),
+        (date(2026, 10, 11), 1),
+        (date(2026, 10, 18), 2),  # Sunday ending week 2
+        (date(2026, 10, 19), 3),  # Monday starting week 3
+        (date(2026, 11, 15), 6),  # last day of the window
+        (date(2026, 11, 16), 7),
+        (date(2026, 10, 10), 1),  # same week as today, though before it
+        (date(2026, 10, 4), 0),
     ],
 )
-def test_week_numbers_and_slots_are_monday_based(d: date, week: int, slot: int | None) -> None:
+def test_week_numbers_are_monday_based(d: date, week: int) -> None:
     assert dc_week_number(d, TODAY) == week
-    assert dc_slot(d, TODAY) == slot
-
-
-def test_a_show_earlier_today_is_still_in_the_window() -> None:
-    assert dc_slot(TODAY, TODAY) == 1
 
 
 # --- predicates --------------------------------------------------------------------------
@@ -304,7 +297,7 @@ def test_a_dc_member_venue_failing_its_profile_can_still_qualify_as_a_cb_pick() 
     assert eligible_groups(event(club_id="cb-cafe"), members, {}) == {"dc"}
 
 
-# --- planning: slots, caps, determinism ------------------------------------------------------
+# --- planning: caps, determinism ------------------------------------------------------
 
 
 def _act(n: int, day: date, **overrides: object) -> DcEvent:
@@ -320,42 +313,29 @@ def _act(n: int, day: date, **overrides: object) -> DcEvent:
     return event(**fields)
 
 
-def test_acts_are_placed_in_the_slot_of_their_earliest_eligible_show() -> None:
+def test_the_dc_playlist_covers_all_six_weeks_and_lists_an_act_once() -> None:
     events = [
-        event(instance_id=1, show_date=date(2026, 11, 3)),  # slot 3
-        event(instance_id=2, show_date=date(2026, 10, 13)),  # slot 1: earliest, so it wins
+        event(instance_id=1, show_date=date(2026, 11, 3)),  # week 4
+        event(instance_id=2, show_date=date(2026, 10, 13)),  # week 1
         event(instance_id=3, show_date=date(2026, 10, 21), act_name="Other", act_name_norm="Other"),
     ]
 
     plan = plan_playlists(events, [], TODAY)
 
-    assert [a.act_name_norm for a in plan["next-2-weeks"]] == ["Some Act"]
-    assert [a.act_name_norm for a in plan["weeks-3-4"]] == ["Other"]
-    assert plan["weeks-5-6"] == ()  # a sparse far slot is expected, not a fault
+    assert [a.act_name_norm for a in plan["next-6-weeks"]] == ["Some Act", "Other"]
     assert plan["blues-alley"] == plan["alxjazz"] == ()
 
 
-def test_an_act_never_appears_in_two_dc_slots() -> None:
-    events = [
-        event(instance_id=i, show_date=TODAY + timedelta(days=d), club_id=f"cb-v{i}")
-        for i, d in enumerate((2, 16, 30), start=1)
-    ]
-
-    plan = plan_playlists(events, [], TODAY)
-
-    assert sum(len(plan[k]) for k in ("next-2-weeks", "weeks-3-4", "weeks-5-6")) == 1
-
-
 def test_the_cap_is_twelve_ranked_cb_pick_then_date_then_name() -> None:
-    # 14 acts in slot 1: 3 are not CB Picks (but are dc members), so they rank last.
+    # 14 acts: 3 are not CB Picks (but are dc members), so they rank last.
     events = [_act(n, date(2026, 10, 13) + timedelta(days=n % 3)) for n in range(1, 12)]
     events += [_act(n, date(2026, 10, 12), cb_pick=False, club_id="cb-cafe") for n in range(12, 15)]
     members = [Membership("cb-cafe", "dc", "all")]
 
     plan = plan_playlists(events, members, TODAY)
 
-    kept = {a.act_name_norm for a in plan["next-2-weeks"]}
-    assert len(kept) == dc_groups.DC_SLOT_CAP == 12
+    kept = {a.act_name_norm for a in plan["next-6-weeks"]}
+    assert len(kept) == dc_groups.DC_CAP == 12
     # All 11 CB Picks are in; only one non-pick fits, and it is the alphabetically first
     # among those with the earliest date: Act 12.
     assert {f"Act {n:02d}" for n in range(1, 12)} <= kept
@@ -369,7 +349,7 @@ def test_cap_ordering_is_deterministic_regardless_of_input_order() -> None:
     second = plan_playlists(list(reversed(events)), [], TODAY)
 
     assert first == second
-    assert [a.act_name_norm for a in first["next-2-weeks"]] == [
+    assert [a.act_name_norm for a in first["next-6-weeks"]] == [
         f"Act {n:02d}" for n in range(1, 13)
     ]
 
@@ -384,7 +364,7 @@ def test_playlist_order_is_earliest_show_then_name() -> None:
 
     plan = plan_playlists(events, [], TODAY)
 
-    assert [a.act_name_norm for a in plan["next-2-weeks"]] == ["Act 02", "Act 03", "Zed"]
+    assert [a.act_name_norm for a in plan["next-6-weeks"]] == ["Act 02", "Act 03", "Zed"]
 
 
 def test_venue_lists_are_uncapped_and_single_list_across_six_weeks() -> None:
@@ -397,7 +377,7 @@ def test_venue_lists_are_uncapped_and_single_list_across_six_weeks() -> None:
     plan = plan_playlists(events, members, TODAY)
 
     assert len(plan["blues-alley"]) == 30
-    assert plan["next-2-weeks"] == plan["weeks-3-4"] == plan["weeks-5-6"] == ()
+    assert plan["next-6-weeks"] == ()
 
 
 def test_events_outside_the_window_are_ignored() -> None:
@@ -457,16 +437,15 @@ def test_the_live_snapshot_reproduces_dc_section_5_counts_to_within_feed_drift()
 
     That snapshot is not recoverable: CapitalBop's calendar fills in daily. On the
     2026-10-11 snapshot committed here (today = 10-11, window 10-11..11-15) the rules give
-    the same 16 and 13 for the two venue lists and 5 / 5 / 0 for dc, one more act in slot 2.
+    the same 16 and 13 for the two venue lists and 10 for dc (it was 5 / 5 / 0 across three slots
+    before the dc slots were merged into one six-week playlist).
     These are the numbers the rules produce on this data, pinned so a rule change shows up.
     """
     plan = plan_playlists(_snapshot_events(), SEEDED_MEMBERSHIPS, date(2026, 10, 11))
 
     counts = {slot: len(acts) for slot, acts in plan.items()}
     assert counts == {
-        "next-2-weeks": 5,
-        "weeks-3-4": 5,
-        "weeks-5-6": 0,
+        "next-6-weeks": 10,
         "blues-alley": 16,
         "alxjazz": 13,
     }
@@ -531,5 +510,5 @@ def test_planned_instance_ids_leave_out_acts_the_cap_dropped() -> None:
 
     planned = planned_instance_ids(events, [], TODAY)
 
-    assert len(plan_playlists(events, [], TODAY)["next-2-weeks"]) == 12
+    assert len(plan_playlists(events, [], TODAY)["next-6-weeks"]) == 12
     assert planned == set(range(1, 13))

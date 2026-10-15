@@ -300,7 +300,7 @@ transaction as the insert.
 | Column | Notes |
 |---|---|
 | `id bigserial PRIMARY KEY` | |
-| `region text NOT NULL`, `slot_key text NOT NULL` | `UNIQUE (region, slot_key)`: `('dc', 'next-2-weeks')`, `('dc', 'weeks-3-4')`, `('dc', 'weeks-5-6')`, `('dc', 'blues-alley')`, `('dc', 'alxjazz')` |
+| `region text NOT NULL`, `slot_key text NOT NULL` | `UNIQUE (region, slot_key)`: `('dc', 'next-6-weeks')`, `('dc', 'blues-alley')`, `('dc', 'alxjazz')` |
 | `group_key text NOT NULL` | Which group feeds it |
 | `spotify_playlist_id text`, `spotify_url text` | Null until the first reconcile creates it |
 | `title text NOT NULL`, `description text`, `is_public boolean NOT NULL` | From `core/dc_groups.py` |

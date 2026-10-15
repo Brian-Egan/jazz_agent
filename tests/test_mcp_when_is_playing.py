@@ -140,7 +140,7 @@ def test_the_row_names_the_rolling_playlist_the_act_is_currently_in(db: Connecti
     PgArtistRepo(db).link_show_artist(show_id, "a1")
     repo = PgRollingPlaylistRepo(db)
     playlist_id = repo.upsert_rolling_playlist(
-        RollingPlaylist("dc", "next-2-weeks", "dc", "DC Jazz · Next 2 Weeks", True)
+        RollingPlaylist("dc", "next-6-weeks", "dc", "DC Jazz · Next 6 Weeks", True)
     )
     repo.link_spotify_playlist(playlist_id, "sp1", "https://open.spotify.com/playlist/sp1")
     stint_id = repo.open_stint(RollingPlaylistTrack(playlist_id, "t1", "alb", "a1", 0))
@@ -148,8 +148,8 @@ def test_the_row_names_the_rolling_playlist_the_act_is_currently_in(db: Connecti
     row = when_is_playing(db, "Maria Grand", today=TODAY)[0]
     assert row["playlists"] == [
         {
-            "slot_key": "next-2-weeks",
-            "title": "DC Jazz · Next 2 Weeks",
+            "slot_key": "next-6-weeks",
+            "title": "DC Jazz · Next 6 Weeks",
             "url": "https://open.spotify.com/playlist/sp1",
         }
     ]
