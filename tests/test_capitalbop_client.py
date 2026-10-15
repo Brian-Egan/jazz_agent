@@ -216,3 +216,22 @@ def test_article_is_none_when_the_event_has_none() -> None:
     )
 
     assert _client().article(1) is None
+
+
+def test_html_entities_in_names_and_addresses_are_decoded() -> None:
+    from jazz_agent.adapters.capitalbop import _parse_event
+
+    event = _parse_event(
+        {
+            "id": 1,
+            "event_id": 2,
+            "name": "Elijah Jamal Balbed &#8211; &ldquo;Standard-ish&rdquo;",
+            "start_date": "2026-10-29",
+            "venue": {"term_id": 9, "slug": "mr-henrys", "name": "Mr. Henry&#039;s &amp; Co"},
+            "venue_detail": {"address": "601 Pennsylvania Ave &amp; 7th"},
+        }
+    )
+
+    assert event.name == "Elijah Jamal Balbed – “Standard-ish”"
+    assert event.venue.name == "Mr. Henry's & Co"
+    assert event.venue_address == "601 Pennsylvania Ave & 7th"

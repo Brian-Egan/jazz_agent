@@ -286,3 +286,18 @@ def test_valdes_pair_uncertain_verdict_is_a_miss_not_the_other_valdes() -> None:
 
     assert result.matched_artist is None
     assert result.match_miss is not None
+
+
+def test_model_returning_an_id_outside_the_candidates_is_a_miss_not_a_crash() -> None:
+    # Invariant 8: an id the model invented was never a candidate, so it cannot be a match.
+    music = FakeMusicService([BILL_FRISELL])
+    llm = FakeAnthropicClient(
+        {"artist_id": "not-a-candidate", "confidence": 0.95, "reasoning": "hallucinated"}
+    )
+
+    result = adjudicate(1, "Bill Frisell Trio", "raw text", music, llm, "claude-haiku-4-5")  # type: ignore[arg-type]
+
+    assert result.matched_artist is None
+    assert result.match_miss is not None
+    assert result.match_miss.reason == "NO_CONFIDENT_MATCH"
+    assert result.match_miss.best_guess_id == BILL_FRISELL["id"]

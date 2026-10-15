@@ -17,7 +17,7 @@ from psycopg_pool import ConnectionPool
 # Matches conftest.py's own default -- duplicated rather than imported, since
 # tests/ isn't a package and a relative import here would be fragile.
 TEST_DATABASE_URL = os.environ.get(
-    "TEST_DATABASE_URL", "postgresql://jazz_agent:CHANGEME@localhost:5432/jazz_agent"
+    "TEST_DATABASE_URL", "postgresql://jazz_agent:CHANGEME@localhost:5432/jazz_agent_test"
 )
 SEED_PATH = Path(__file__).resolve().parent.parent / "migrations" / "seed_clubs.sql"
 

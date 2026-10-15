@@ -140,11 +140,13 @@ def _parse_event(raw: dict[str, Any]) -> CalendarEvent:
     return CalendarEvent(
         instance_id=int(raw["id"]),
         event_id=int(raw["event_id"]),
-        name=str(raw["name"]),
+        name=html.unescape(str(raw["name"])),
         start_date=date.fromisoformat(raw["start_date"]),
         start_time=_parse_time(raw.get("start_time")),
         venue=CalendarVenue(
-            term_id=int(venue["term_id"]), slug=str(venue["slug"]), name=str(venue["name"])
+            term_id=int(venue["term_id"]),
+            slug=str(venue["slug"]),
+            name=html.unescape(str(venue["name"])),
         ),
         geocoded_city=geolocation.get("city") or None,
         neighborhoods=tuple(str(n["slug"]) for n in raw.get("neighborhoods") or ()),
@@ -154,7 +156,7 @@ def _parse_event(raw: dict[str, Any]) -> CalendarEvent:
         ticket_link=str(raw.get("ticket_link") or ""),
         repeats=bool(raw.get("repeats")),
         description_html=str(raw.get("description") or ""),
-        venue_address=str(detail.get("address") or geolocation.get("address") or ""),
+        venue_address=html.unescape(str(detail.get("address") or geolocation.get("address") or "")),
     )
 
 
