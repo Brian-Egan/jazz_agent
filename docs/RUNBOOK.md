@@ -227,7 +227,43 @@ a precondition (AGENTS.md invariant 3, ADR-006). What you'll actually see:
 
 ---
 
-## 10. Quick reference
+## 10. Rolling out the D.C. phase (docs/DC.md)
+
+Run these in order. Steps 3 onward touch live systems; do not skip the dry run.
+
+1. **Back up first**: `pg_dump -Fc "$DATABASE_URL" -f jazz_agent-pre-dc.dump` (section 8).
+2. **Check `unaccent` is available**, since migration 0006 creates it and `when_is_playing`
+   needs it:
+   `psql "$DATABASE_URL" -c "SELECT name FROM pg_available_extensions WHERE name='unaccent';"`
+   One row means the migration can run (the extension is trusted, so the database owner can
+   create it). No row means install `postgresql-contrib` first.
+3. **Migrate**: `make migrate`. Applies 0003-0006 and `seed_dc.sql` (the three venue groups
+   and their memberships). Each file is transactional; a failure leaves that file unapplied.
+4. **Dry run**: `DRY_RUN=1 uv run python -m jazz_agent.pipeline.daily`. It mirrors the
+   CapitalBop feed and writes shows, artists and extractions, but sends nothing to Spotify,
+   records no playlist state and sends no ntfy pushes. Read the planned playlists in the log
+   and confirm the five lists look right before continuing.
+5. **First real run**: `uv run python -m jazz_agent.pipeline.daily`. Creates the five
+   playlists (AlxJazz private, the other four public) and the first stints. Use
+   `list_venue_groups` (MCP) for their URLs.
+6. **Second run, same day**: confirm nothing changes (idempotent: no new stints, no Spotify
+   writes). Then let cron take over.
+7. **Reconnect the Claude Project**: re-paste `docs/claude-project-instructions.md` and
+   restart the MCP service so the new tools are served.
+
+**Watch for**: an ntfy alert reading "N of M tracks vanished at once" means AlxJazz lost more
+than half its tracks on Spotify between runs; the run recorded nothing and re-sent nothing,
+and the alert repeats each run until someone looks. Check the playlist, then fix it by hand. A playlist stuck with `sync_pending = true` after a failed
+Spotify call is re-sent in full on the next run.
+
+**Rollback**: migrations 0004-0006 only add columns and an extension, so the previous code
+still runs against the migrated schema. To stop the D.C. unit, set the venue memberships
+inactive (`UPDATE venue_group_members SET deactivated_at = now() WHERE deactivated_at IS NULL`); nothing is deleted
+(invariant 5). The five playlists are never unfollowed by the pipeline.
+
+---
+
+## 11. Quick reference
 
 | Task | Command |
 |---|---|
