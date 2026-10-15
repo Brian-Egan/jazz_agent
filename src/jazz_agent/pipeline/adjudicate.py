@@ -96,6 +96,10 @@ def adjudicate(
     artist_id = verdict["artist_id"]
     confidence = float(verdict["confidence"])
 
+    # A model-invented id is not a match (invariant 8): treat it as no confident match.
+    if artist_id is not None and not any(c["id"] == artist_id for c, _ in plausible):
+        artist_id, confidence = None, 0.0
+
     if artist_id is None or confidence < REVIEW_THRESHOLD:
         fallback = next((c for c, _ in plausible if c["id"] == artist_id), plausible[0][0])
         return AdjudicationResult(
