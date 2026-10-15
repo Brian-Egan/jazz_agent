@@ -446,3 +446,19 @@ def test_client_satisfies_music_service_protocol() -> None:
     # MusicService; the assert just gives pytest something to run.
     client: MusicService = _client()
     assert client is not None
+
+
+@respx.mock
+def test_429_with_a_penalty_length_retry_after_fails_instead_of_sleeping() -> None:
+    _mock_token()
+    route = respx.get("https://api.spotify.com/v1/artists/a1/albums").mock(
+        return_value=httpx.Response(429, headers={"Retry-After": "34730"})
+    )
+    sleeps: list[float] = []
+    client = _client(sleep=sleeps.append)
+
+    with pytest.raises(httpx.HTTPStatusError):
+        client.get_artist_albums("a1")
+
+    assert sleeps == []  # never slept for hours
+    assert route.call_count == 1  # and did not hammer the endpoint while penalised

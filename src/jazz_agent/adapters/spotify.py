@@ -25,6 +25,10 @@ _RETRYABLE_STATUS = {500, 502, 503, 504}
 _MAX_TRACKS_PER_REQUEST = 100
 _MAX_SEARCH_LIMIT = 10  # Feb 2026: /search limit max 50 -> 10
 _PLAYLIST_ITEMS_PAGE = 50
+# A 429 whose Retry-After is longer than this is a rate-limit penalty (seen: 34730 s on the
+# albums endpoint), not a blip. Sleeping through it would hang the whole daily run for hours,
+# so the call fails instead and the caller's per-club / per-playlist handling takes over.
+_MAX_RETRY_AFTER_SECONDS = 60.0
 
 
 def _chunk(items: Sequence[Any], size: int) -> list[list[Any]]:
@@ -91,6 +95,8 @@ class SpotifyClient:
 
             if response.status_code == 429 and attempt < self._max_retries:
                 retry_after = float(response.headers.get("Retry-After", "1"))
+                if retry_after > _MAX_RETRY_AFTER_SECONDS:
+                    response.raise_for_status()
                 self._sleep(retry_after)
                 force_refresh = False
                 attempt += 1
