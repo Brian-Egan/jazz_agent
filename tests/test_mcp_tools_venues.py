@@ -191,11 +191,7 @@ def test_list_venue_groups_shows_all_three_groups_with_null_urls_until_a_reconci
         "early_evening",
         "standard_no_pick",
     }
-    assert [p["slot_key"] for p in groups["dc"]["playlists"]] == [
-        "next-2-weeks",
-        "weeks-3-4",
-        "weeks-5-6",
-    ]
+    assert [p["slot_key"] for p in groups["dc"]["playlists"]] == ["next-6-weeks"]
     assert all(p["url"] is None for g in listing["groups"] for p in g["playlists"])
     assert groups["alxjazz"]["playlists"][0]["public"] is False
 

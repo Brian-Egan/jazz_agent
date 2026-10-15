@@ -9,7 +9,7 @@ independence, and failure isolation (§10). Decisions are recorded in
 DC differs from NYC in shape, not in spirit. NYC has six hand-picked clubs, one request each,
 and one weekly playlist per club. DC has one consolidated calendar
 ([CapitalBop](https://www.capitalbop.com/dcjazzcalendar/)) covering ~250 venues, so DC is
-built from **filters over a feed** and produces five **rolling** playlists whose Spotify URLs
+built from **filters over a feed** and produces three **rolling** playlists whose Spotify URLs
 never change.
 
 ---
@@ -18,14 +18,12 @@ never change.
 
 | Playlist | Built from | Shape | Visibility |
 |---|---|---|---|
-| `DC Jazz · Next 2 Weeks` | `dc` group (DC §4) | Slot 1 of 3 | Public |
-| `DC Jazz · Weeks 3–4` | `dc` group | Slot 2 of 3 | Public |
-| `DC Jazz · Weeks 5–6` | `dc` group | Slot 3 of 3 | Public |
+| `DC Jazz · Next 6 Weeks` | `dc` group (DC §4) | Single list | Public |
 | `Blues Alley · Next 6 Weeks` | `blues-alley` group | Single list | Public |
 | `AlxJazz · Next 6 Weeks` | `alxjazz` group | Single list | Private |
 
 Each artist contributes **two tracks** (DC §8). The listening budget this was sized against
-is 1–2 hours a week; at roughly 13 minutes per artist, the five playlists together carry
+is 1–2 hours a week; at roughly 13 minutes per artist, the three playlists together carry
 about 6 new artists a week, falling as novelty (DC §9) retires artists already rated.
 
 ```mermaid
@@ -36,8 +34,8 @@ flowchart TB
   Elig --> Ext[Haiku personnel extraction, cached]
   Ext --> Match[matching: ARCHITECTURE §6, unchanged]
   Match --> Nov[novelty]
-  Nov --> Slot[slot assignment + caps]
-  Slot --> Pick[two-track selection]
+  Nov --> Cap[caps]
+  Cap --> Pick[two-track selection]
   Pick --> Detect[user-removal detection]
   Detect --> Recon[rolling reconciler]
   Recon --> SP[Spotify: replace items, update details]
@@ -125,13 +123,13 @@ Seeded overrides (CapitalBop carries no address for these):
 ## 4. Groups and filter profiles
 
 Three **groups**, hardcoded in `core/dc_groups.py` with their playlist definitions: titles,
-slot structure, caps, visibility ([ADR-018](DECISIONS.md#adr-018)). Adding a fourth group is
+caps, visibility ([ADR-018](DECISIONS.md#adr-018)). Adding a fourth group is
 a code change and a deploy — deliberately, because a group means a new Spotify playlist and
 the MCP server must never cause one to exist.
 
 | Group | Membership | Shape | Cap |
 |---|---|---|---|
-| `dc` | Every **CB Pick** passing the `standard` profile and the geography filter, plus shows at venues that are members of `dc` (each under its own profile) | 3 slots | 12 artists per slot |
+| `dc` | Every **CB Pick** passing the `standard` profile and the geography filter, plus shows at venues that are members of `dc` (each under its own profile) | Single list | 12 artists |
 | `blues-alley` | Shows at member venues | Single list | None |
 | `alxjazz` | Shows at member venues | Single list | None |
 
@@ -184,7 +182,7 @@ events are extracted, which is what keeps Haiku cost at cents a week.
 | **Geography** | Resolved city (DC §3) ∈ {Washington, Alexandria, Arlington} |
 
 Measured against the live feed on 2026-10-11 (window Oct 11 – Nov 15): `dc` 10 artists
-(5 / 5 / 0 by slot), `blues-alley` 16, `alxjazz` 13. The feed gains shows daily, so these
+(5 / 5 / 0 across the three slots the `dc` list had at the time, now one six-week list), `blues-alley` 16, `alxjazz` 13. The feed gains shows daily, so these
 counts drift; `tests/fixtures/capitalbop/eligibility_snapshot.json` pins this snapshot. These
 are pre-match ceilings — acts that fail matching drop out.
 
@@ -256,7 +254,7 @@ Order within an artist: the two tracks in search-rank order.
 
 ## 9. Novelty
 
-Applies to all five playlists ([ADR-019](DECISIONS.md#adr-019)). Computed in
+Applies to all three playlists ([ADR-019](DECISIONS.md#adr-019)). Computed in
 `core/novelty.py` from the artist's **most recent** artist-level `feedback` row:
 
 | Latest artist-level feedback | Effect |
@@ -273,29 +271,25 @@ An excluded artist is still stored, still matched, and still answerable through
 
 ---
 
-## 10. Slots, caps, and the rolling reconciler
+## 10. Caps and the rolling reconciler
 
-### Slots
+### Window
 
-Week 1 is the Monday-start week containing today. For the `dc` group: slot 1 = weeks 1–2,
-slot 2 = weeks 3–4, slot 3 = weeks 5–6. Each artist is placed in the slot of their
-**earliest** eligible show, so an album never appears twice across the three. As shows pass,
-artists move forward a slot and then off. `blues-alley` and `alxjazz` are single lists over
-weeks 1–6.
-
-The far slot is usually sparse — CapitalBop's calendar fills in late, and most acts that far
-out are residents already placed earlier. That is expected, not a fault.
+Week 1 is the Monday-start week containing today. All three playlists are single lists over
+weeks 1–6, and an act appears once, ordered by its earliest eligible show. As shows pass, acts
+roll off. (The `dc` group was three two-week slots until [ADR-025](DECISIONS.md#adr-025):
+the far slots were nearly empty, and the whole window is only about a dozen artists.)
 
 ### Caps
 
-`dc` slots cap at **12 artists**, ranked: CB Pick first, then earliest show date, then act
+The `dc` playlist caps at **12 artists**, ranked: CB Pick first, then earliest show date, then act
 name for determinism. Overflow is not dropped from the system — it is in `shows`, answerable
 over MCP, and enters the playlist as earlier artists roll off. Venue lists are uncapped.
 
 ### The key
 
 Rolling playlists live in `rolling_playlists`, keyed `UNIQUE (region, slot_key)` — e.g.
-`('dc', 'next-2-weeks')`, `('dc', 'blues-alley')`. This is invariant 4's key for DC; NYC keeps
+`('dc', 'next-6-weeks')`, `('dc', 'blues-alley')`. This is invariant 4's key for DC; NYC keeps
 `(club_id, week_start_date)` untouched. Rows are upserted from `core/dc_groups.py` at the
 start of each DC run, so a playlist row exists before any Spotify call.
 
@@ -306,7 +300,7 @@ re-booked months on) gets a new row. Rows are never deleted (invariant 5).
 | `removal_reason` | Meaning |
 |---|---|
 | `rolled_off` | The show passed or left the window |
-| `moved` | The artist's earliest show moved them to another slot |
+| `moved` | The artist moved to another playlist (a venue joined or left a dedicated group) |
 | `ineligible` | Cancelled, a filter or membership change, novelty, or cap overflow |
 | `correction` | ARCHITECTURE §6 stage 7 changed the match |
 | `user` | Removed by Brian in Spotify (DC §11) |
@@ -320,7 +314,7 @@ re-booked months on) gets a new row. Rows are never deleted (invariant 5).
 3. Compare with the live stint rows (`removed_at IS NULL`).
 4. If membership or order differs: **write the database first** — close departing stints with
    their reason, open new stints — **then** `PUT /playlists/{id}/items` with the full ordered
-   list. Lists are far below Spotify's 100-item replace limit (cap 12 × 2 = 24 per slot; Blues
+   list. Lists are far below Spotify's 100-item replace limit (cap 12 × 2 = 24 on dc; Blues
    Alley ~40). If the Spotify call fails, the run records `partial`, and the next run's
    identical desired list converges.
 5. If title or description differs: `PUT /playlists/{id}` (playlist-details editing, which the
@@ -437,7 +431,7 @@ is one source, and a failed fetch means no DC playlist can be trusted that day, 
 touched. Outcomes reuse the existing set (`success`, `fetch_fail`, `extract_fail`, `partial`,
 …). Three consecutive DC failures fire the existing chronic-failure push (ARCHITECTURE §10).
 
-Within a successful fetch, each of the five playlists reconciles inside its own
+Within a successful fetch, each of the three playlists reconciles inside its own
 `try`/`except`, so one playlist's Spotify failure never blocks the others.
 
 ---
@@ -446,11 +440,11 @@ Within a successful fetch, each of the five playlists reconciles inside its own
 
 ```
 core/
-  dc_groups.py      # the three groups, five playlists, caps, visibility, profile names
+  dc_groups.py      # the three groups, three playlists, caps, visibility, profile names
   eligibility.py    # DC §5 predicates; pure
   novelty.py        # DC §9; pure
   removals.py       # DC §11 detection and guards; pure
-  weeks.py          # + Monday-start slot arithmetic beside the existing Tuesday logic
+  weeks.py          # + Monday-start window arithmetic beside the existing Tuesday logic
   normalize.py      # + status-marker stripping (DC §2)
   selection.py      # + select_tracks (DC §8)
 ports/

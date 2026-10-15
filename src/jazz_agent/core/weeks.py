@@ -61,11 +61,3 @@ def dc_week_number(d: date, today: date) -> int:
     """1-based Monday-start week of ``d`` relative to ``today``'s week (week 1). Values below
     1 are in the past; above 6 are beyond the window."""
     return (week_start_date(d, MONDAY) - week_start_date(today, MONDAY)).days // 7 + 1
-
-
-def dc_slot(d: date, today: date) -> int | None:
-    """Slot 1, 2 or 3 (weeks 1-2, 3-4, 5-6) for a show date, or None outside the window."""
-    start, end = dc_window(today)
-    if not start <= d <= end:
-        return None
-    return (dc_week_number(d, today) + 1) // 2

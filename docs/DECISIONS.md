@@ -27,13 +27,14 @@ because it is load-bearing and a future reader would otherwise have to re-derive
 | [015](#adr-015) | Run-health tool plus ntfy for chronic failure only | Accepted, resolves SC7 vs Out-of-Scope. Amended by ADR-023 |
 | [016](#adr-016) | Two files for two agent audiences | Accepted |
 | [017](#adr-017) | DC from the CapitalBop JSON API, not scraped pages | Accepted |
-| [018](#adr-018) | DC: five rolling playlists, Monday weeks, hardcoded groups | Accepted, departs from ADR-008 for DC |
+| [018](#adr-018) | DC: five rolling playlists, Monday weeks, hardcoded groups | Accepted, departs from ADR-008 for DC. Slot structure amended by ADR-025 |
 | [019](#adr-019) | DC eligibility filters and novelty | Accepted |
 | [020](#adr-020) | DC: two tracks per artist, search as popularity proxy | Accepted, departs from ADR-010 for DC |
 | [021](#adr-021) | MCP may write venue group membership | Accepted, amends ADR-014 and invariant 7 |
 | [022](#adr-022) | Removing a track in Spotify is feedback (LaPortas) | Accepted |
 | [023](#adr-023) | ntfy for new artists at LaPortas | Accepted, amends ADR-015 |
 | [024](#adr-024) | DC and Blues Alley playlists are public | Accepted, amends "no sharing" |
+| [025](#adr-025) | DC: one six-week list instead of three slots | Accepted, amends ADR-018 |
 
 ---
 
@@ -781,7 +782,7 @@ than removes.
 `public: false`, and Spotify does not reliably let other people open a private playlist from
 a link.
 
-**Decision.** Visibility is set per playlist in `core/dc_groups.py`. The three DC slots and
+**Decision.** Visibility is set per playlist in `core/dc_groups.py`. The DC list and
 Blues Alley are public; AlxJazz is private. "Sharing" means only that others can view and
 follow a playlist. Multi-user support — other people logging in, recording feedback, or using
 MCP — remains absent.
@@ -793,3 +794,30 @@ the same hardcoded definitions as the groups makes changing this a one-line edit
 **Consequences.** The friend's reactions do not reach the system. The user's removals curate
 what the friend hears. Public playlists appear on the user's Spotify profile unless hidden
 there by hand.
+
+---
+
+## ADR-025 {#adr-025}
+### DC: one six-week list instead of three slots
+
+**Amends** ADR-018. Its three-slot structure is replaced; Monday weeks, hardcoded groups,
+stints and the `(region, slot_key)` key stand.
+
+**Context.** ADR-018 split the `dc` group into three two-week slots on the expectation of
+dozens of artists. Measured on the live feed (2026-10-11) the `dc` group yields about ten
+artists in the whole six-week window, five and five in the first two slots and none in the
+third. Three playlists for ten artists means two thin lists and an empty one, and the friend
+the lists are shared with has three things to follow.
+
+**Decision.** One public playlist, `DC Jazz · Next 6 Weeks` (`('dc', 'next-6-weeks')`),
+ordered by each act's earliest show. The 12-artist cap now applies to the whole list. Three
+playlists in total: the DC list, Blues Alley, AlxJazz.
+
+**Rationale.** The list is short enough to be read as a whole, and a six-week view is what
+the venue lists already give. Fewer playlists means fewer permanent URLs.
+
+**Consequences.** The cap is a ceiling on the whole window rather than on each slot (12
+artists, down from 36 in total capacity); at the measured ten it does not bind, and it is
+`DC_CAP` in `core/dc_groups.py` if the feed grows. `removal_reason = 'moved'` is no longer
+produced by dc slot changes; it stays in the schema for an artist moving between playlists.
+No migration: no production DC run had created a playlist under the old slot keys.

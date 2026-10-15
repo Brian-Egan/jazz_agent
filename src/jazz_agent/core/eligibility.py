@@ -15,7 +15,7 @@ from datetime import date, time
 
 from jazz_agent.core import dc_groups
 from jazz_agent.core.dc_geo import WANTED_CITIES
-from jazz_agent.core.weeks import dc_slot, dc_window
+from jazz_agent.core.weeks import dc_window
 
 WEEKDAY_EVENING_START = time(19, 0)  # Mon-Fri. Friday is a weekday.
 WEEKEND_EVENING_START = time(17, 0)  # Sat-Sun
@@ -182,12 +182,12 @@ def eligible_groups(
 def plan_playlists(
     events: Iterable[DcEvent], memberships: Iterable[Membership], today: date
 ) -> dict[str, tuple[PlannedAct, ...]]:
-    """Which acts belong on which of the five playlists, keyed by ``slot_key``.
+    """Which acts belong on which of the three playlists, keyed by ``slot_key``.
 
-    Each act is placed in the slot of its **earliest** eligible show, so it never appears
-    twice across the three dc slots. dc slots cap at ``DC_SLOT_CAP`` acts ranked CB Pick
-    first, then earliest date, then act name; overflow is dropped from the playlist only (it
-    stays in ``shows``). Within a playlist acts are ordered by earliest show then name.
+    Each playlist covers the whole six-week window. The dc playlist caps at ``DC_CAP`` acts
+    ranked CB Pick first, then earliest date, then act name; overflow is dropped from the
+    playlist only (it stays in ``shows``). Within a playlist acts are ordered by earliest show
+    then name.
     Deterministic: ties never fall back to input order.
     """
     start, end = dc_window(today)
@@ -205,12 +205,7 @@ def plan_playlists(
 
     planned: dict[str, tuple[PlannedAct, ...]] = {}
     for playlist in dc_groups.PLAYLISTS:
-        acts = [
-            _plan_act(act_events)
-            for act_events in shows.get(playlist.group_key, {}).values()
-            if playlist.slot is None
-            or dc_slot(_earliest(act_events).show_date, today) == playlist.slot
-        ]
+        acts = [_plan_act(act_events) for act_events in shows.get(playlist.group_key, {}).values()]
         if playlist.cap is not None:
             acts = sorted(acts, key=_rank)[: playlist.cap]
         planned[playlist.slot_key] = tuple(sorted(acts, key=_order))

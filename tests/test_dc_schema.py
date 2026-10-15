@@ -151,26 +151,18 @@ def test_check_constraints_agree_with_dc_groups(
 
 
 def test_seeded_playlist_definitions_are_consistent() -> None:
-    assert len(dc_groups.PLAYLISTS) == 5
+    assert len(dc_groups.PLAYLISTS) == 3
     assert {(p.region, p.slot_key) for p in dc_groups.PLAYLISTS} == {
-        ("dc", "next-2-weeks"),
-        ("dc", "weeks-3-4"),
-        ("dc", "weeks-5-6"),
+        ("dc", "next-6-weeks"),
         ("dc", "blues-alley"),
         ("dc", "alxjazz"),
     }
     assert {p.slot_key: p.is_public for p in dc_groups.PLAYLISTS} == {
-        "next-2-weeks": True,
-        "weeks-3-4": True,
-        "weeks-5-6": True,
+        "next-6-weeks": True,
         "blues-alley": True,
         "alxjazz": False,
     }
-    assert {p.slot_key: p.cap for p in dc_groups.PLAYLISTS if p.cap} == {
-        "next-2-weeks": 12,
-        "weeks-3-4": 12,
-        "weeks-5-6": 12,
-    }
+    assert {p.slot_key: p.cap for p in dc_groups.PLAYLISTS if p.cap} == {"next-6-weeks": 12}
     assert dc_groups.DEDICATED_GROUP_KEYS == ("blues-alley", "alxjazz")
 
 

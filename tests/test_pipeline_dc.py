@@ -369,15 +369,13 @@ def held(world: World, slot_key: str) -> list[str]:
     return [r[0] for r in rows]
 
 
-def test_first_run_builds_all_five_playlists_with_two_tracks_per_artist(world: World) -> None:
+def test_first_run_builds_all_three_playlists_with_two_tracks_per_artist(world: World) -> None:
     result = world.run()
 
     assert result.outcome == "success"
     assert sorted(t for t, _ in world.music.created) == sorted(
         [
-            "DC Jazz · Next 2 Weeks",
-            "DC Jazz · Weeks 3–4",
-            "DC Jazz · Weeks 5–6",
+            "DC Jazz · Next 6 Weeks",
             "Blues Alley · Next 6 Weeks",
             "AlxJazz · Next 6 Weeks",
         ]
@@ -385,11 +383,14 @@ def test_first_run_builds_all_five_playlists_with_two_tracks_per_artist(world: W
     # Public per core/dc_groups.py: AlxJazz is the one private list.
     assert dict(world.music.created)["AlxJazz · Next 6 Weeks"] is False
     assert dict(world.music.created)["Blues Alley · Next 6 Weeks"] is True
-    assert len(held(world, "next-2-weeks")) == 2
-    assert len(held(world, "weeks-3-4")) == 2
-    assert held(world, "weeks-5-6") == []  # a sparse far slot is expected
+    # One six-week dc playlist: Maria Grand (10/16) then Aaron Myers (10/23), two tracks each.
+    assert [t.split("-t")[0] for t in held(world, "next-6-weeks")] == [
+        "id-maria-grand",
+        "id-maria-grand",
+        "id-aaron-myers",
+        "id-aaron-myers",
+    ]
     assert len(held(world, "blues-alley")) == 2
-    assert all(t.startswith("id-maria-grand") for t in held(world, "next-2-weeks"))
     assert "Ignored Jam" not in str(world.music.track_searches)
 
 
@@ -398,10 +399,10 @@ def test_description_lists_artists_with_day_and_venue(world: World) -> None:
 
     with world.db.connection() as conn:
         description = conn.execute(
-            "SELECT description FROM rolling_playlists WHERE slot_key = 'next-2-weeks'"
+            "SELECT description FROM rolling_playlists WHERE slot_key = 'next-6-weeks'"
         ).fetchone()
     assert description is not None
-    assert description[0] == "Maria Grand (Fri 10/16, Rhizome)"
+    assert description[0].startswith("Maria Grand (Fri 10/16, Rhizome) · Aaron Myers (")
     assert len(description[0]) <= 300
 
 
@@ -419,7 +420,7 @@ def test_idempotency_two_runs_leave_the_database_identical_and_issue_no_second_w
     assert snapshot(world.db) == after_first  # rolling_playlists, stints and events identical
     assert world.music.writes == writes_after_first  # no second create, replace or details PUT
     assert world.extractor.calls == haiku_after_first
-    assert len(world.music.created) == 5  # never a second playlist on the same key
+    assert len(world.music.created) == 3  # never a second playlist on the same key
 
 
 def test_a_new_show_changes_only_the_affected_playlist(world: World) -> None:
@@ -430,32 +431,30 @@ def test_a_new_show_changes_only_the_affected_playlist(world: World) -> None:
     world.run(RUN2)
 
     assert len(world.music.replaced) == replaced_before + 1
-    assert len(held(world, "next-2-weeks")) == 4
+    assert len(held(world, "next-6-weeks")) == 6
     # The new act sorts first (10/13 is before 10/16): order follows earliest show.
-    assert held(world, "next-2-weeks")[0].startswith("id-late-addition")
+    assert held(world, "next-6-weeks")[0].startswith("id-late-addition")
 
 
-def test_an_artist_whose_earliest_show_moves_from_slot_2_to_slot_1_closes_one_moved_stint(
+def test_an_artist_whose_show_date_moves_within_the_window_keeps_their_stint(
     world: World,
 ) -> None:
     world.run(RUN1)
-    assert held(world, "weeks-3-4")[0].startswith("id-aaron-myers")
-    # The 10/23 date is replaced by a 10/14 one for the same series.
+    before = held(world, "next-6-weeks")
+    replaced_before = len(world.music.replaced)
+    # The 10/23 date is replaced by a 10/14 one for the same series: with one six-week playlist
+    # it is the same act on the same list, so nothing moves and nothing is rewritten.
     world.calendar.event_list[1] = ev(22, 102, "Aaron Myers", date(2026, 10, 14))
 
     world.run(RUN2)
 
+    assert sorted(held(world, "next-6-weeks")) == sorted(before)
     with world.db.connection() as conn:
         closed = conn.execute(
-            "SELECT p.slot_key, t.removal_reason FROM rolling_playlist_tracks t "
-            "JOIN rolling_playlists p ON p.id = t.rolling_playlist_id "
-            "WHERE t.spotify_artist_id = 'id-aaron-myers' AND t.removed_at IS NOT NULL"
-        ).fetchall()
-    assert held(world, "weeks-3-4") == []
-    assert [t.split("-t")[0] for t in held(world, "next-2-weeks")].count("id-aaron-myers") == 2
-    assert (
-        closed and {r for _, r in closed} == {"moved"} and {s for s, _ in closed} == {"weeks-3-4"}
-    )
+            "SELECT count(*) FROM rolling_playlist_tracks WHERE removed_at IS NOT NULL"
+        ).fetchone()
+    assert closed is not None and closed[0] == 0
+    assert replaced_before >= 1
 
 
 def test_rolled_off_and_ineligible_reasons(world: World) -> None:
@@ -492,7 +491,7 @@ def test_cancelled_future_show_closes_stints_as_ineligible(world: World) -> None
             "WHERE spotify_artist_id = 'id-aaron-myers' AND removed_at IS NOT NULL"
         ).fetchall()
     assert reasons == [("ineligible",)]
-    assert held(world, "weeks-3-4") == []
+    assert not any(t.startswith("id-aaron-myers") for t in held(world, "next-6-weeks"))
 
 
 def test_spotify_failure_after_the_database_write_is_partial_and_the_next_run_converges(
@@ -516,7 +515,7 @@ def test_spotify_failure_after_the_database_write_is_partial_and_the_next_run_co
     second = world.run(RUN2)
 
     assert second.outcome == "success"
-    for definition_slot in ("next-2-weeks", "weeks-3-4", "blues-alley"):
+    for definition_slot in ("next-6-weeks", "blues-alley"):
         assert world.music.playlists[_pid(world, definition_slot)]["items"] == held(
             world, definition_slot
         )
@@ -540,7 +539,7 @@ def _pid(world: World, slot_key: str) -> str:
     return str(row[0])
 
 
-def test_one_playlist_raising_leaves_the_other_four_correctly_built(world: World) -> None:
+def test_one_playlist_raising_leaves_the_others_correctly_built(world: World) -> None:
     world.music.fail_create_titled = "Blues Alley · Next 6 Weeks"
 
     result = world.run()
@@ -548,9 +547,8 @@ def test_one_playlist_raising_leaves_the_other_four_correctly_built(world: World
     assert result.outcome == "partial"
     by_slot = {p.slot_key: p for p in result.playlists}
     assert by_slot["blues-alley"].status == "partial"
-    assert len(held(world, "next-2-weeks")) == 2
-    assert len(held(world, "weeks-3-4")) == 2
-    assert len(world.music.created) == 4
+    assert len(held(world, "next-6-weeks")) == 4
+    assert len(world.music.created) == 2
     assert held(world, "blues-alley") == []  # nothing recorded for the playlist that failed
 
 
@@ -637,8 +635,8 @@ def test_dry_run_then_real_run_builds_everything(world: World) -> None:
 
     result = world.run(RUN2)
 
-    assert result.outcome == "success" and len(world.music.created) == 5
-    assert len(held(world, "next-2-weeks")) == 2
+    assert result.outcome == "success" and len(world.music.created) == 3
+    assert len(held(world, "next-6-weeks")) == 4
 
 
 def test_a_disliked_artist_is_left_off_every_playlist(world: World) -> None:
@@ -650,7 +648,10 @@ def test_a_disliked_artist_is_left_off_every_playlist(world: World) -> None:
 
     world.run(RUN2)
 
-    assert held(world, "next-2-weeks") == []
+    assert [t.split("-t")[0] for t in held(world, "next-6-weeks")] == [
+        "id-aaron-myers",
+        "id-aaron-myers",
+    ]
     with world.db.connection() as conn:
         reason = conn.execute(
             "SELECT DISTINCT removal_reason FROM rolling_playlist_tracks "
@@ -662,21 +663,21 @@ def test_a_disliked_artist_is_left_off_every_playlist(world: World) -> None:
 def test_a_user_removed_track_is_never_readded(world: World) -> None:
     world.run(RUN1)
     repo = PgRollingPlaylistRepo(world.db)
-    playlist = repo.get_rolling_playlist("dc", "next-2-weeks")
+    playlist = repo.get_rolling_playlist("dc", "next-6-weeks")
     assert playlist is not None and playlist.id is not None
     stint = repo.open_stints(playlist.id)[0]
     assert stint.id is not None
     repo.close_stint(stint.id, "user", RUN1)  # what #29's detection will record...
-    spotify_items = world.music.playlists[_pid(world, "next-2-weeks")]["items"]
+    spotify_items = world.music.playlists[_pid(world, "next-6-weeks")]["items"]
     spotify_items.remove(stint.spotify_track_id)  # ...after Brian deleted it in Spotify
     replaced_before = len(world.music.replaced)
 
     world.run(RUN2)
 
-    assert stint.spotify_track_id not in held(world, "next-2-weeks")
+    assert stint.spotify_track_id not in held(world, "next-6-weeks")
     assert len(world.music.replaced) == replaced_before  # nothing to put back
-    assert world.music.playlists[_pid(world, "next-2-weeks")]["items"] == held(
-        world, "next-2-weeks"
+    assert world.music.playlists[_pid(world, "next-6-weeks")]["items"] == held(
+        world, "next-6-weeks"
     )
 
 
@@ -881,7 +882,7 @@ def _playlist_row_id(world: World, slot_key: str) -> int:
 def test_removals_from_the_other_playlists_are_not_inferred(world: World) -> None:
     world.run(RUN1)
     spotify_items(world, "blues-alley").pop(0)
-    spotify_items(world, "next-2-weeks").pop(0)
+    spotify_items(world, "next-6-weeks").pop(0)
 
     world.run(RUN2)
 
