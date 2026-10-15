@@ -308,12 +308,20 @@ class _TrackSelector:
 
     def tracks_for(self, artist: Artist) -> list[dict[str, Any]]:
         if artist.spotify_artist_id not in self._memo:
-            found = self._music.search_tracks(f'artist:"{artist.name}"', limit=10)
-            self._memo[artist.spotify_artist_id] = select_tracks(
-                artist.spotify_artist_id,
-                found,
-                lambda: self._album_fallback(artist.spotify_artist_id),
-            )
+            try:
+                found = self._music.search_tracks(f'artist:"{artist.name}"', limit=10)
+                self._memo[artist.spotify_artist_id] = select_tracks(
+                    artist.spotify_artist_id,
+                    found,
+                    lambda: self._album_fallback(artist.spotify_artist_id),
+                )
+            except Exception:
+                # A failed lookup (a Spotify 429 on the album fallback, say) skips this artist
+                # for the run rather than failing the whole playlist or settling for one
+                # track: an artist already on a list is never topped up, so a half-selection
+                # would stick. They have no stints yet, so the next run picks them up whole.
+                logger.exception("track selection failed for %s; skipping this run", artist.name)
+                self._memo[artist.spotify_artist_id] = []
         return self._memo[artist.spotify_artist_id]
 
     def _album_fallback(self, spotify_artist_id: str) -> list[dict[str, Any]]:
