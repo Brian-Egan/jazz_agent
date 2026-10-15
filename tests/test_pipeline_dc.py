@@ -118,6 +118,7 @@ class FakeSpotify:
         self.unfollowed: list[str] = []
         self.fail_replace_once = False
         self.fail_create_titled: str | None = None
+        self.fail_search_for: str | None = None
         self.last_artist_query = ""
         self.isrc_overrides: dict[str, str] = {}
         self.track_searches: list[str] = []
@@ -142,6 +143,8 @@ class FakeSpotify:
     def search_tracks(self, query: str, limit: int = 10) -> list[dict[str, Any]]:
         self.track_searches.append(query)
         name = query.removeprefix('artist:"').removesuffix('"')
+        if self.fail_search_for == name:
+            raise RuntimeError("simulated Spotify 429")
         artist_id = f"id-{_slug(name)}"
         return [
             {
@@ -550,6 +553,27 @@ def test_one_playlist_raising_leaves_the_others_correctly_built(world: World) ->
     assert len(held(world, "next-6-weeks")) == 4
     assert len(world.music.created) == 2
     assert held(world, "blues-alley") == []  # nothing recorded for the playlist that failed
+
+
+def test_an_artist_whose_selection_fails_is_skipped_and_picked_up_whole_next_run(
+    world: World,
+) -> None:
+    world.music.fail_search_for = "Aaron Myers"
+
+    first = world.run(RUN1)
+
+    assert first.outcome == "success"
+    assert [t.split("-t")[0] for t in held(world, "next-6-weeks")] == ["id-maria-grand"] * 2
+
+    world.music.fail_search_for = None
+    world.run(RUN2)
+
+    assert sorted(t.split("-t")[0] for t in held(world, "next-6-weeks")) == [
+        "id-aaron-myers",
+        "id-aaron-myers",
+        "id-maria-grand",
+        "id-maria-grand",
+    ]
 
 
 def test_a_failed_fetch_touches_no_dc_playlist_and_logs_fetch_fail(world: World) -> None:
